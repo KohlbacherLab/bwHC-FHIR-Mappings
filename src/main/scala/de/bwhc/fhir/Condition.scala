@@ -95,11 +95,9 @@ object Diagnosis
     extension: Option[Tuple1[Stage.Date]],
     summary: BasicCodeableConcept[T]
   )
-//    modifierExtension: Tuple1[Stage.Date],
   extends Condition.StageElement
      with Condition.Stage.summary[BasicCodeableConcept[T]]
      with Condition.Stage.extensions[Tuple1[Stage.Date],Optional]
-//     with Condition.Stage.modifierExtensions[Tuple1[Stage.Date]]
 
 
   case class HistologyEvidence(
@@ -110,7 +108,7 @@ object Diagnosis
  
 
   implicit val profiles =
-    Meta.Profiles[Diagnosis]("http://bwhc-mtb-diagnosis")
+    Meta.Profiles[Diagnosis]("http://bwhc.de/mtb/diagnosis")
     
   implicit val formatEvidence = Json.format[HistologyEvidence]
 

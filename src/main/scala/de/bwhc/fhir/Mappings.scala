@@ -52,6 +52,21 @@ object Mappings
       )
 
 
+  implicit val icd10CodingToFHIR: dtos.Coding[dtos.ICD10GM] => BasicCoding[dtos.ICD10GM] = 
+    coding =>
+      BasicCoding[dtos.ICD10GM](
+        coding.code.value,
+        coding.display,
+        coding.version
+      )
+
+  implicit val icd10CodingFromFHIR: BasicCoding[dtos.ICD10GM] => dtos.Coding[dtos.ICD10GM] = 
+    coding =>
+      dtos.Coding[dtos.ICD10GM](
+        dtos.ICD10GM(coding.code),
+        coding.display,
+        coding.version
+      )
 
   //---------------------------------------------------------------------------
   // Gender mappings
@@ -312,6 +327,33 @@ object Mappings
 
 
   //---------------------------------------------------------------------------
+  // Family Member Diagnosis mappings
+  //---------------------------------------------------------------------------
+
+  implicit def familyMemberDiagIdToIdentifier(id: dtos.FamilyMemberDiagnosis.Id) =
+    Identifier(id.value)
+
+  implicit def familyMemberDiagIdFromIdentifier(id: Identifier) =
+    dtos.FamilyMemberDiagnosis.Id(id.value)
+
+  implicit val familyMemberRelationshipToHL7v3 =
+    Map[dtos.FamilyMember.Relationship.Value,HL7v3FamilyMember.Value](
+      dtos.FamilyMember.Relationship.FamilyMember         -> HL7v3FamilyMember.FAMMEMB ,
+      dtos.FamilyMember.Relationship.ExtendedFamilyMember -> HL7v3FamilyMember.EXT     
+    )
+  
+  implicit val familyMemberDiagnosisToFHIR: 
+    dtos.FamilyMemberDiagnosis => FamilyMemberHistoryDTO =
+      diag =>
+        FamilyMemberHistoryDTO(
+          NonEmptyList.one(diag.id),
+          FamilyMemberHistory.Status.HealthUnknown,
+          Reference[MTBPatient](diag.patient),
+          BasicCodeableConcept(BasicCoding(diag.relationship.code))
+        )
+
+
+  //---------------------------------------------------------------------------
   // Histology mappings
   //---------------------------------------------------------------------------
 
@@ -411,28 +453,25 @@ object Mappings
   import de.bwhc.mtb.data.entry.dtos.{Medication => ATC}
 
 
-  implicit val medicationSetToFHIR: List[dtos.Coding[ATC]] => MTBMedication = {
+  implicit val medicationSetToFHIR: NonEmptyList[dtos.Coding[ATC]] => MTBMedication = {
     meds =>
       val id = meds.map(_.code.value).reduceLeft(_ + "-" + _)
       MTBMedication(
         id,
-        NonEmptyList.fromListUnsafe(
-          meds.map(m =>
-            MTBMedication.Ingredient(
-              BasicCodeableConcept(
-                BasicCoding[ATC](
-                  m.code.value,
-                  m.display,
-                )
+        meds.map(m =>
+          MTBMedication.Ingredient(
+            BasicCodeableConcept(
+              BasicCoding[ATC](
+                m.code.value,
+                m.display,
               )
             )
           )
-          .toList
         )
       )
   }
 
-  implicit val medicationListFromFHIR: MTBMedication => List[dtos.Coding[ATC]] = {
+  implicit val medicationListFromFHIR: MTBMedication => NonEmptyList[dtos.Coding[ATC]] = {
     m =>
       m.ingredient
         .map(_.itemCodeableConcept.coding.head)
@@ -442,14 +481,20 @@ object Mappings
             c.display
           )
         )
-        .toList
   }
 
 
-/*
+
   //---------------------------------------------------------------------------
   // Guideline therapy mappings
   //---------------------------------------------------------------------------
+
+  implicit def therapyIdFromIdentifier(id: Identifier) =
+    dtos.TherapyId(id.value)
+
+  implicit def therapyIdToIdentifier(id: dtos.TherapyId) =
+    Identifier(id.value)
+
 
   implicit val prevGLTherapyToFHIR: dtos.PreviousGuidelineTherapy => PreviousGuidelineTherapy = {
 
@@ -458,11 +503,11 @@ object Mappings
       val medication = th.medication.mapTo[MTBMedication]
 
       PreviousGuidelineTherapy(
-        NonEmptyList.one(th.id.mapTo[Identifier]),
-        Tuple1(TherapyLine(PositiveInt(th.therapyLine.value))),
+        NonEmptyList.one(th.id),
+        th.therapyLine.map(l => Tuple1(TherapyLine(PositiveInt(l.value)))),
         Tuple1(medication),
         MedicationStatement.Status.Unknown,
-        Reference[MTBPatient](th.patient.mapTo[Identifier]),
+        Reference[MTBPatient](th.patient),
         Reference.contained(medication)
       )
   }
@@ -471,67 +516,57 @@ object Mappings
     th =>
 
       dtos.PreviousGuidelineTherapy(      
-        dtos.GuidelineTherapy.Id(th.identifier.head.value),
-        th.subject.identifier.map(_.value).map(dtos.Patient.Id).get,
-        dtos.TherapyLine(th.modifierExtension._1.value.value),
-        th.contained._1.mapTo[Set[med.Medication]]
+        th.identifier.head,
+        th.subject.identifier.get,
+        th.extension.map { case Tuple1(l) => dtos.TherapyLine(l.value) },
+        th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]]
       )
 
   }
 
 
   implicit val lastGLTherapyToFHIR:
-    dtos.LastGuidelineTherapy => (LastGuidelineTherapy,ObsRECIST) = {
+    dtos.LastGuidelineTherapy => LastGuidelineTherapy = {
 
     th =>
 
       import LastGuidelineTherapy._
-      import ObsRECIST._
 
       val med = th.medication.mapTo[MTBMedication]
 
-      val glTh = LastGuidelineTherapy(
-        NonEmptyList.one(th.id.mapTo[Identifier]),
-        Tuple1(TherapyLine(PositiveInt(th.therapyLine.value))),
+      LastGuidelineTherapy(
+        NonEmptyList.one(th.id),
+        th.therapyLine.map(l => Tuple1(TherapyLine(PositiveInt(l.value)))),
         Tuple1(med),
         MedicationStatement.Status.Stopped,
-        NonEmptyList.one(BasicCodeableConcept(BasicCoding(th.reasonStopped,None))),
+        th.reasonStopped.map(r => List(BasicCodeableConcept(BasicCoding(r.code.toString,None)))),
         Reference[MTBPatient](th.patient.mapTo[Identifier]),
-        ClosedPeriod(th.period.start,th.period.end),
+        th.period.map(_.mapTo[OpenEndPeriod[LocalDate]]),
         Reference.contained(med)
       )
 
-      val response =
-        ObsRECIST(
-          NonEmptyList.one(th.id.mapTo[Identifier]),  //TODO: generate random Identifier??
-          Observation.Status.Final,
-          NonEmptyList.one(Reference[LastGuidelineTherapy](glTh.identifier.head)),
-       th.progressionDate,   //TODO: re-consider
-          Reference[MTBPatient](th.patient.mapTo[Identifier]),
-          BasicCodeableConcept(BasicCoding(th.response.code, th.response.display))
-        )
-
-      (glTh,response)
   }
 
-  implicit val lastGLTherapyFromFHIR:
-   ( (LastGuidelineTherapy,ObsRECIST) )=> dtos.LastGuidelineTherapy = {
 
-    case (th,response) =>
+  implicit val lastGLTherapyFromFHIR:
+   LastGuidelineTherapy => dtos.LastGuidelineTherapy = {
+      
+    import dtos.GuidelineTherapy.StopReason
+
+    th =>
 
       dtos.LastGuidelineTherapy(
-        dtos.GuidelineTherapy.Id(th.identifier.head.value),
-        th.subject.identifier.map(_.value).map(dtos.Patient.Id).get,
-        dtos.TherapyLine(th.modifierExtension._1.value.value),
-        dtos.ClosedPeriod(
-          th.effectivePeriod.start,th.effectivePeriod.end
-        ),
-        th.contained._1.mapTo[Set[med.Medication]],
-        dtos.RECISTCoding(
-          dtos.RECIST.withName(response.valueCodeableConcept.coding.head.code)
-        ),
-        None, //TODO: re-consider
-        dtos.GuidelineTherapy.StopReason.withName(th.statusReason.head.coding.head.code)
+        th.identifier.head,
+        th.subject.identifier.get,
+        th.extension.map { case Tuple1(ext) => dtos.TherapyLine(ext.value.value) },
+        th.period.map(_.mapTo[dtos.OpenEndPeriod[LocalDate]]),
+        th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
+        th.statusReason.flatMap(_.headOption)
+          .map(cc =>
+            dtos.Coding[StopReason.Value](
+              StopReason.withName(cc.coding.head.code), None
+            )
+          )
       )
 
   }
@@ -547,41 +582,48 @@ object Mappings
       import TumorSpecimen._
 
       TumorSpecimen(
-        NonEmptyList.one(sp.id.mapTo[Identifier]),
-        NonEmptyList.one(TumorSpecimen.Diagnosis(BasicCodeableConcept(sp.icd10.mapTo[BasicCoding[ICD10GM]]))),
-        Reference[MTBPatient](sp.patient.mapTo[Identifier]),
-        TumorSpecimen.Collection(
-          sp.collectionDate,
-          BasicCodeableConcept(BasicCoding(sp.localization,None)),
-          BasicCodeableConcept(BasicCoding(sp.collectionMethod,None))
+        NonEmptyList.one(sp.id),
+        NonEmptyList.one(
+          SampleDiagnosis(BasicCodeableConcept(sp.icd10.mapTo[BasicCoding[dtos.ICD10GM]]))
+        ),
+        Reference[MTBPatient](sp.patient),
+        sp.collection.map(c => 
+          TumorSpecimen.Collection(
+            c.date,
+            BasicCodeableConcept(BasicCoding(c.localization,None)),
+            BasicCodeableConcept(BasicCoding(c.method,None))
+          )
         ),
         sp.`type`.map(t => List(BasicCodeableConcept(BasicCoding(t.toString,None))))
       )
   }
 
   implicit val specimenFromFHIR: TumorSpecimen => dtos.Specimen = {
+
+    import dtos.Specimen.Collection
+
     sp =>
 
-      val icd10 = sp.modifierExtension.head.value.coding.head
-
       dtos.Specimen(
-        dtos.Specimen.Id(sp.identifier.head.value),
-        sp.subject.identifier.map(_.value).map(dtos.Patient.Id).get,
-        ICD10GMCoding(
-          icd.ICD10GM.Code(icd10.code),
-          icd10.display,
-          icd10.version.map(icd.ICD10GM.Version(_)).get
-        ), 
-        dtos.Specimen.Localization.withName(sp.collection.bodySite.coding.head.code),
+        sp.identifier.head,
+        sp.subject.identifier.get,
+        sp.modifierExtension.head.value.coding.head,
         sp.condition.flatMap(_.headOption)
           .map(_.coding.head.code)
           .map(dtos.Specimen.Type.withName _),
-        sp.collection.collectedDateTime,
-        dtos.Specimen.CollectionMethod.withName(sp.collection.method.coding.head.code)        
+        sp.collection.map(c => 
+          Collection(
+            c.collectedDateTime,
+            Collection.Localization.withName(c.bodySite.coding.head.code),
+            Collection.Method.withName(c.method.coding.head.code)
+          )
+        )
       )
 
   }
 
+
+/*
   //---------------------------------------------------------------------------
   // Somatic NGS Report mappings
   //---------------------------------------------------------------------------
@@ -767,12 +809,21 @@ object Mappings
         simpleVariants.map(_.mapTo[SimpleVariant])
       )
   }
+*/
+
 
 
   //---------------------------------------------------------------------------
   // CarePlan / TherapyRecommendation mappings
   //---------------------------------------------------------------------------
   
+  implicit def therapyRecIdFromIdentifier(id: Identifier) =
+    dtos.TherapyRecommendation.Id(id.value)
+
+  implicit def therapyRecIdToIdentifier(id: dtos.TherapyRecommendation.Id) =
+    Identifier(id.value)
+
+
   implicit val priorityToFHIR =
     Map[dtos.TherapyRecommendation.Priority.Value, MedicationRequest.Priority.Value](
       dtos.TherapyRecommendation.Priority.One   -> MedicationRequest.Priority.Stat,
@@ -796,52 +847,67 @@ object Mappings
         val med = rec.medication.mapTo[MTBMedication]
 
         TherapyRecommendation(
-          NonEmptyList.one(rec.id.mapTo[Identifier]),
-          Tuple1(
-            LoE(
-              LoE.Grade(BasicCoding(rec.levelOfEvidence.grading,None)),
-              rec.levelOfEvidence
-                .addendums
-                .map(add => BasicCoding(add,None))
-                .map(LoE.Addendum(_))
+          NonEmptyList.one(rec.id),
+          rec.levelOfEvidence.map( loe =>
+            Tuple1(
+              LoE(
+                LoE.Grade(BasicCoding(loe.grading.toString,None)),
+                loe.addendums.map(
+                  _.map(add =>
+                    LoE.Addendum(BasicCoding(add.toString,None))
+                  )
+                )
+                .getOrElse(Set.empty[LoE.Addendum])
+              )
             )
           ),
           Tuple1(med),
-          rec.priority.mapTo[MedicationRequest.Priority.Value],
+          rec.priority.map(_.mapTo[MedicationRequest.Priority.Value]),
           MedicationRequest.Status.Unknown,          
           MedicationRequest.Intent.Proposal,
-          rec.issueDate,
+          rec.issuedOn,
           Reference[MTBPatient](rec.patient.mapTo[Identifier]),
           Reference.contained(med),
-          NonEmptyList.one(
-            Reference[SomaticVariantProfile](rec.supportingVariant.mapTo[Identifier]) //TODO: re-consider
-          )  
+//          rec.supportingVariant.map( v =>
+//            List(Reference[SomaticVariantProfile](rec.supportingVariant.mapTo[Identifier]))
+//          )  
+          None //TODO: map supportingVariant 
         )
 
   }
+
 
   implicit val therapyRecommendationFromFHIR:
     TherapyRecommendation => dtos.TherapyRecommendation = {
 
       rec =>
  
-        val loe = rec.modifierExtension._1
-
         dtos.TherapyRecommendation(       
-          dtos.TherapyRecommendation.Id(rec.identifier.head.value),        
+          rec.identifier.head,        
+          rec.subject.identifier.get,
           rec.authoredOn,
-          rec.subject.identifier.map(_.value).map(dtos.Patient.Id).get,
-          dtos.LevelOfEvidence(
-            dtos.LevelOfEvidence.Grading.withName(loe.grade.value.code),
-            loe.addendums.map(_.value.code).map(dtos.LevelOfEvidence.Addendum.withName _)
-          ),
-          rec.priority.mapTo[dtos.TherapyRecommendation.Priority.Value],
-          dtos.Variant.CosmicId(rec.supportingInformation.head.identifier.get.value),
-          rec.contained._1.mapTo[Set[med.Medication]]
+          rec.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
+          rec.priority.map(_.mapTo[dtos.TherapyRecommendation.Priority.Value]),
+          rec.extension.map { case Tuple1(loe) =>
+            dtos.LevelOfEvidence(
+              dtos.Coding(dtos.LevelOfEvidence.Grading.withName(loe.grade.value.code),None),
+              Option(loe.addendums)
+                .filterNot(_.isEmpty)
+                .map(_.map(_.value.code))
+                .map(_.map(dtos.LevelOfEvidence.Addendum.withName _))
+                .map(_.map(dtos.Coding(_,None)))
+            )
+          },
+          rec.supportingInformation
+            .flatMap(_.headOption)
+            .map(
+              ref => dtos.Variant.CosmicId(ref.identifier.get.value)
+            )
         )
     }
 
 
+/*
   type CarePlanWithRecommendations = (MTBCarePlan,NonEmptyList[TherapyRecommendation])
 
   implicit val carePlanToFHIR: dtos.CarePlan => CarePlanWithRecommendations = {

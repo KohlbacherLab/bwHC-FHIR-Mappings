@@ -39,7 +39,7 @@ trait TumorSpecimenProfile
 extends Specimen
    with Specimen.identifierNel
    with Specimen.modifierExtension[SampleDiagnosis]
-   with Specimen.`type`[Optional]
+   with Specimen.`type`[Required]
    with Specimen.subject[Patient,Required]
    with Specimen.collection[
      Specimen.CollectionElement
@@ -54,7 +54,7 @@ extends Specimen
            with CodeableConcept.codingNel[Coding[dtos.Specimen.Collection.Method.Value]],
          Required
        ],
-     Required
+     Optional
    ]
    with Specimen.condition[
      CodeableConcept
@@ -69,11 +69,12 @@ final case class TumorSpecimen
   identifier: NonEmptyList[Identifier],
   modifierExtension: NonEmptyList[SampleDiagnosis],
   subject: Reference[MTBPatient],
-  collection: TumorSpecimen.Collection,
+  collection: Option[TumorSpecimen.Collection],
   condition: Option[List[BasicCodeableConcept[dtos.Specimen.Type.Value]]],
-  `type`: Option[BasicCodeableConcept[HL7v2Table0487]] =
-     Some(BasicCodeableConcept(BasicCoding[HL7v2Table0487]("TUMOR",Some("Tumor"))))
-) extends TumorSpecimenProfile
+  `type`: BasicCodeableConcept[HL7v2Table0487] =
+     BasicCodeableConcept(BasicCoding[HL7v2Table0487]("TUMOR",Some("Tumor"))) 
+) 
+extends TumorSpecimenProfile
 
 
 object TumorSpecimen
@@ -92,7 +93,7 @@ object TumorSpecimen
 
 
   implicit val profiles =
-    Meta.Profiles[TumorSpecimen]("http://bwhc-tumor-specimen")
+    Meta.Profiles[TumorSpecimen]("http://bwhc.de/mtb/tumor-specimen")
 
   implicit val typeSystem =
     Coding.System[dtos.Specimen.Type.Value]("bwhc-mtb-specimen-type")

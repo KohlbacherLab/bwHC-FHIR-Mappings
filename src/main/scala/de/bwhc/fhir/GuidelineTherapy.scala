@@ -29,49 +29,52 @@ object TherapyLine
 sealed trait GuidelineTherapyProfile
 extends MedicationStatement
    with MedicationStatement.identifierNel
-   with MedicationStatement.modifierExtensions[Product1[TherapyLine]]
+   with MedicationStatement.extensions[Product1[TherapyLine],Optional]
    with MedicationStatement.contained[Product1[MTBMedicationProfile]]
    with MedicationStatement.subject[Patient,Required]
    with MedicationStatement.medicationReference[MTBMedicationProfile]
 
 trait LastGuidelineTherapyProfile
 extends GuidelineTherapyProfile
-   with MedicationStatement.effectivePeriod[ClosedPeriod[LocalDate],Required]
-   with MedicationStatement.statusReasonNel[
+   with MedicationStatement.effectivePeriod[OpenEndPeriod[LocalDate],Optional]
+   with MedicationStatement.statusReason[
      CodeableConcept
-     with CodeableConcept.codingNel[Coding[GuidelineTherapy.StopReason.Value]]
+       with CodeableConcept.codingNel[Coding[GuidelineTherapy.StopReason.Value]],
+     Optional
    ]
 
 
 final case class PreviousGuidelineTherapy
 (
   identifier: NonEmptyList[Identifier],
-  modifierExtension: Tuple1[TherapyLine],
+  extension: Option[Tuple1[TherapyLine]],
   contained: Tuple1[MTBMedication],
   status: MedicationStatement.Status.Value,
   subject: Reference[MTBPatient],
   medicationReference: Reference[MTBMedication]
-) extends GuidelineTherapyProfile
+)
+extends GuidelineTherapyProfile
 
 
 final case class LastGuidelineTherapy
 (
   identifier: NonEmptyList[Identifier],
-  modifierExtension: Tuple1[TherapyLine],
+  extension: Option[Tuple1[TherapyLine]],
   contained: Tuple1[MTBMedication],
   status: MedicationStatement.Status.Value,
-  statusReason: NonEmptyList[BasicCodeableConcept[GuidelineTherapy.StopReason.Value]],
+  statusReason: Optional[List[BasicCodeableConcept[GuidelineTherapy.StopReason.Value]]],
   subject: Reference[MTBPatient],
-  effectivePeriod: ClosedPeriod[LocalDate],
+  effectivePeriod: Option[OpenEndPeriod[LocalDate]],
   medicationReference: Reference[MTBMedication]
-) extends LastGuidelineTherapyProfile
+)
+extends LastGuidelineTherapyProfile
 
 
 object PreviousGuidelineTherapy
 {
 
   implicit val profiles =
-    Meta.Profiles[PreviousGuidelineTherapy]("http://bwhc-mtb-previous-guideline-therapy")
+    Meta.Profiles[PreviousGuidelineTherapy]("http://bwhc.de/mtb/previous-guideline-therapy")
   
   import json.contained._
   
@@ -83,7 +86,7 @@ object LastGuidelineTherapy
 {
 
   implicit val profiles =
-    Meta.Profiles[LastGuidelineTherapy]("http://bwhc-mtb-last-guideline-therapy")
+    Meta.Profiles[LastGuidelineTherapy]("http://bwhc.de/mtb/last-guideline-therapy")
 
 
   implicit val stopReasonSystem =

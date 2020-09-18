@@ -40,7 +40,7 @@ object MTBMedication
 {
 
   implicit val profiles =
-    Meta.Profiles[MTBMedication]("http://de.bwhc/medication")
+    Meta.Profiles[MTBMedication]("http://bwhc.de/mtb/medication")
     
   final case class Ingredient
   (

@@ -43,7 +43,7 @@ final case class MTBPatient
 object MTBPatient
 {
 
-  implicit val profiles = Meta.Profiles[MTBPatient]("bwhc-mtb-patient")
+  implicit val profiles = Meta.Profiles[MTBPatient]("http://bwhc.de/mtb/patient")
 
 
   case class HealthInsuranceContact(

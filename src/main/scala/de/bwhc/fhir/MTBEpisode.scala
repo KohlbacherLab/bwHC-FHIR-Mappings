@@ -32,7 +32,7 @@ extends MTBEpisodeProfile
 object MTBEpisode
 {
 
-  implicit val profiles = Meta.Profiles[MTBEpisode]("http://bwhc.de/mtb-episode")
+  implicit val profiles = Meta.Profiles[MTBEpisode]("http://bwhc.de/mtb/episode")
     
 
   import org.hl7.fhir.r4.json._
