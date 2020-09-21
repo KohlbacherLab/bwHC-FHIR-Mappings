@@ -95,9 +95,9 @@ final case class TherapyRecommendation
   status: MedicationRequest.Status.Value,
   intent: MedicationRequest.Intent.Value,
   authoredOn: Option[LocalDate],
-  subject: Reference[MTBPatient],
-  medicationReference: Reference[Medication],
-  supportingInformation: Option[List[Reference[SomaticVariantProfile]]]
+  subject: LogicalReference[MTBPatient],
+  medicationReference: LiteralReference[Medication],
+  supportingInformation: Option[List[LogicalReference[SomaticVariantProfile]]]
 //  supportingInformation: NonEmptyList[Reference[SomaticVariantProfile]]
 ) extends TherapyRecommendationProfile
 
@@ -120,7 +120,7 @@ final case class MTBCarePlan
   status: CarePlan.Status.Value,
   intent: CarePlan.Intent.Value,
   created: Option[LocalDate],
-  subject: Reference[MTBPatient],
+  subject: LogicalReference[MTBPatient],
   description: Option[String],
   activity: NonEmptyList[MTBCarePlan.Activity] 
 )
@@ -134,7 +134,7 @@ object MTBCarePlan
   
   case class Activity
   (
-    reference: Reference[TherapyRecommendation]
+    reference: LogicalReference[TherapyRecommendation]
   )
   extends CarePlan.ActivityElement
      with CarePlan.Activity.reference[TherapyRecommendation]

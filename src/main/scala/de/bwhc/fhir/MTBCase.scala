@@ -19,13 +19,13 @@ extends Encounter
    with Encounter.subject[Patient,Required]
    with Encounter.diagnosisNel[Encounter.DiagnosisElement[DiagnosisProfile]]
 
-
+/*
 case class MTBCase
 (
   identifier: NonEmptyList[Identifier],
   status: Encounter.Status.Value,
   `class`: BasicCoding[HL7v3ActEncounterCode.Value],
-  subject: Reference[MTBPatient],
+  subject: LogicalReference[MTBPatient],
   diagnosis: NonEmptyList[MTBCase.Diagnosis]
 )
 extends MTBCaseProfile
@@ -38,7 +38,7 @@ object MTBCase
     
     
   final case class Diagnosis(
-    condition: Reference[DiagnosisProfile]
+    condition: LogicalReference[DiagnosisProfile]
   ) extends Encounter.DiagnosisElement[DiagnosisProfile]
 
 
@@ -51,3 +51,4 @@ object MTBCase
   implicit val format = Json.format[MTBCase]
   
 }
+*/

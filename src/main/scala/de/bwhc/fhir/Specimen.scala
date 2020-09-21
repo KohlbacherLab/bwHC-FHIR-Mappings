@@ -68,7 +68,7 @@ final case class TumorSpecimen
 (
   identifier: NonEmptyList[Identifier],
   modifierExtension: NonEmptyList[SampleDiagnosis],
-  subject: Reference[MTBPatient],
+  subject: LogicalReference[MTBPatient],
   collection: Option[TumorSpecimen.Collection],
   condition: Option[List[BasicCodeableConcept[dtos.Specimen.Type.Value]]],
   `type`: BasicCodeableConcept[HL7v2Table0487] =

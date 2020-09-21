@@ -249,7 +249,7 @@ final case class SimpleVariant
   id: String,
   identifier: NonEmptyList[Identifier],
   status: Observation.Status.Value,
-  subject: Reference[Patient],
+  subject: LogicalReference[Patient],
   component: SimpleVariant.Components,
   interpretation: NonEmptyList[BasicCodeableConcept[ObsVariant.ClinVar]]
 )

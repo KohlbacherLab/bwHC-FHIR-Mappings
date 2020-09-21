@@ -50,8 +50,10 @@ final case class ObsHistology
   identifier: NonEmptyList[Identifier],
   status: Observation.Status.Value,
   effectiveDateTime: Option[LocalDate],
-  subject: Reference[MTBPatient],
-  specimen: Reference[Specimen],
+  subject: LogicalReference[MTBPatient],
+  specimen: LogicalReference[Specimen],
+//  subject: Reference[MTBPatient],
+//  specimen: Reference[Specimen],
   valueCodeableConcept: Option[BasicCodeableConcept[ICDO3M]],
   note: Option[List[Protocol]]
 )

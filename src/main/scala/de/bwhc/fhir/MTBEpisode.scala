@@ -23,7 +23,7 @@ final case class MTBEpisode
 (
   identifier: NonEmptyList[Identifier],
   status: EpisodeOfCare.Status.Value,
-  patient: Reference[MTBPatient],
+  patient: LogicalReference[MTBPatient],
   period: OpenEndPeriod[LocalDate]
 )
 extends MTBEpisodeProfile

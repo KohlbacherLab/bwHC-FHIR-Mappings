@@ -35,7 +35,8 @@ final case class MTBPatient
   gender: AdministrativeGender.Value,
   birthDate: Option[LocalDate],
   deceasedDateTime: Option[LocalDate],
-  managingOrganization: Option[Reference[ZPM]],
+  managingOrganization: Option[LogicalReference[ZPM]],
+//  managingOrganization: Option[Reference[ZPM]],
   contact: Option[List[MTBPatient.HealthInsuranceContact]]
 ) extends MTBPatientProfile
 
@@ -47,7 +48,7 @@ object MTBPatient
 
 
   case class HealthInsuranceContact(
-    organization: Reference[HealthInsurance],
+    organization: LogicalReference[HealthInsurance],
     relationship: NonEmptyList[BasicCodeableConcept[Contact.RelationshipType.Value]] =
       NonEmptyList.of(BasicCodeableConcept(BasicCoding(Contact.RelationshipType.I)))
   ) extends Patient.ContactElement

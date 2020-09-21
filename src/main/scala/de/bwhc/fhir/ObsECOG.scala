@@ -35,7 +35,7 @@ case class ObsECOG
   identifier: NonEmptyList[Identifier],
   status: Observation.Status.Value,
   effectiveDateTime: Option[LocalDate],
-  subject: Reference[MTBPatient],
+  subject: LogicalReference[MTBPatient],
   valueCodeableConcept: BasicCodeableConcept[ECOG.Value]
 )
 extends ObsECOGProfile

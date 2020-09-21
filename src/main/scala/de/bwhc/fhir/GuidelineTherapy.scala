@@ -50,8 +50,8 @@ final case class PreviousGuidelineTherapy
   extension: Option[Tuple1[TherapyLine]],
   contained: Tuple1[MTBMedication],
   status: MedicationStatement.Status.Value,
-  subject: Reference[MTBPatient],
-  medicationReference: Reference[MTBMedication]
+  subject: LogicalReference[MTBPatient],
+  medicationReference: LiteralReference[MTBMedication]
 )
 extends GuidelineTherapyProfile
 
@@ -63,9 +63,9 @@ final case class LastGuidelineTherapy
   contained: Tuple1[MTBMedication],
   status: MedicationStatement.Status.Value,
   statusReason: Optional[List[BasicCodeableConcept[GuidelineTherapy.StopReason.Value]]],
-  subject: Reference[MTBPatient],
+  subject: LogicalReference[MTBPatient],
   effectivePeriod: Option[OpenEndPeriod[LocalDate]],
-  medicationReference: Reference[MTBMedication]
+  medicationReference: LiteralReference[MTBMedication]
 )
 extends LastGuidelineTherapyProfile
 

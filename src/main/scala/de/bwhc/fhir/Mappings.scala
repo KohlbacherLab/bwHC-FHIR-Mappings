@@ -134,11 +134,11 @@ object Mappings
         pat.gender.mapTo[dtos.Gender.Value],
         pat.birthDate,
         pat.managingOrganization
-          .flatMap(_.identifier)
+          .map(_.identifier)
           .map(id => dtos.ZPM(id.value)),
         pat.contact
           .flatMap(_.headOption)
-          .flatMap(_.organization.identifier)
+          .map(_.organization.identifier)
           .map(id => dtos.HealthInsurance.Id(id.value)),
         pat.deceasedDateTime
       )
@@ -168,7 +168,7 @@ object Mappings
     eoc =>
       dtos.MTBEpisode(
         dtos.MTBEpisode.Id(eoc.identifier.head.value),
-        dtos.Patient.Id(eoc.patient.identifier.get.value),
+        dtos.Patient.Id(eoc.patient.identifier.value),
         eoc.period
       )
 
@@ -204,7 +204,7 @@ object Mappings
     c =>
       dtos.Consent(
         c.identifier.head,
-        c.patient.identifier.get,
+        c.patient.identifier,
         c.status
       )
 
@@ -279,7 +279,7 @@ object Mappings
        
       dtos.Diagnosis(
         diag.identifier.head,
-        diag.subject.identifier.get,
+        diag.subject.identifier,
         diag.recordedDate,
         diag.code
           .map(_.coding.head)
@@ -309,7 +309,7 @@ object Mappings
             )
           ),
         diag.evidence.map(
-          _.flatMap(_.detail.toList.map(_.identifier.get))
+          _.flatMap(_.detail.toList.map(_.identifier))
         ),
         Option(
           diag.stage._1
@@ -388,8 +388,8 @@ object Mappings
     obs =>
       dtos.HistologyResult(
         obs.identifier.head,
-        obs.subject.identifier.get,
-        obs.specimen.identifier.get,
+        obs.subject.identifier,
+        obs.specimen.identifier,
         obs.effectiveDateTime,
         obs.valueCodeableConcept
           .map(_.coding.head)
@@ -436,7 +436,7 @@ object Mappings
     obs =>
       dtos.ECOGStatus(
         obs.identifier.head,
-        obs.subject.identifier.get,
+        obs.subject.identifier,
         obs.effectiveDateTime,
         dtos.Coding(
           dtos.ECOG.withName(obs.valueCodeableConcept.coding.head.code),
@@ -517,7 +517,7 @@ object Mappings
 
       dtos.PreviousGuidelineTherapy(      
         th.identifier.head,
-        th.subject.identifier.get,
+        th.subject.identifier,
         th.extension.map { case Tuple1(l) => dtos.TherapyLine(l.value) },
         th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]]
       )
@@ -557,7 +557,7 @@ object Mappings
 
       dtos.LastGuidelineTherapy(
         th.identifier.head,
-        th.subject.identifier.get,
+        th.subject.identifier,
         th.extension.map { case Tuple1(ext) => dtos.TherapyLine(ext.value.value) },
         th.period.map(_.mapTo[dtos.OpenEndPeriod[LocalDate]]),
         th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
@@ -606,7 +606,7 @@ object Mappings
 
       dtos.Specimen(
         sp.identifier.head,
-        sp.subject.identifier.get,
+        sp.subject.identifier,
         sp.modifierExtension.head.value.coding.head,
         sp.condition.flatMap(_.headOption)
           .map(_.coding.head.code)
@@ -884,7 +884,7 @@ object Mappings
  
         dtos.TherapyRecommendation(       
           rec.identifier.head,        
-          rec.subject.identifier.get,
+          rec.subject.identifier,
           rec.authoredOn,
           rec.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
           rec.priority.map(_.mapTo[dtos.TherapyRecommendation.Priority.Value]),
@@ -900,11 +900,13 @@ object Mappings
           },
           rec.supportingInformation
             .flatMap(_.headOption)
-            .map(
-              ref => dtos.Variant.CosmicId(ref.identifier.get.value)
-            )
+            .map(ref => dtos.Variant.CosmicId(ref.identifier.value))
         )
     }
+
+
+
+
 
 
 /*

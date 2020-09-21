@@ -32,10 +32,10 @@ case class ObsRECIST
 (
   identifier: NonEmptyList[Identifier],
   status: Observation.Status.Value,
-  partOf: NonEmptyList[Reference[MedicationStatement]],
+  partOf: NonEmptyList[LogicalReference[MedicationStatement]],
   effectiveDateTime: Option[LocalDate],
 //  effectiveDateTime: LocalDate,
-  subject: Reference[MTBPatient],
+  subject: LogicalReference[MTBPatient],
   valueCodeableConcept: BasicCodeableConcept[RECIST.Value]
 )
 extends ObsRECISTProfile

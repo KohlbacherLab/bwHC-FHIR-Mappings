@@ -62,7 +62,7 @@ extends Condition
 case class Diagnosis
 (
   identifier: NonEmptyList[Identifier],
-  subject: Reference[MTBPatient],
+  subject: LogicalReference[MTBPatient],
   recordedDate: Option[LocalDate],
   code: Option[BasicCodeableConcept[ICD10GM]],
   bodySite: Option[List[BasicCodeableConcept[ICDO3T]]],
@@ -101,7 +101,7 @@ object Diagnosis
 
 
   case class HistologyEvidence(
-    detail: NonEmptyList[Reference[ObsHistology]]
+    detail: NonEmptyList[LogicalReference[ObsHistology]]
   )
   extends Condition.EvidenceElement
      with Condition.Evidence.detail[ObsHistology]

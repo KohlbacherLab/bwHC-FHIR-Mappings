@@ -21,7 +21,7 @@ final case class FamilyMemberHistoryDTO
 (
   identifier: NonEmptyList[Identifier],
   status: FamilyMemberHistory.Status.Value,
-  patient: Reference[MTBPatient],
+  patient: LogicalReference[MTBPatient],
   relationship: BasicCodeableConcept[HL7v3FamilyMember.Value]
 )
 extends FamilyMemberHistoryProfile

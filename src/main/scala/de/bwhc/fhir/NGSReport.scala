@@ -28,7 +28,7 @@ extends Observation
    with Observation.specimen[Required]
    with Observation.method[
      CodeableConcept
-     with CodeableConcept.codingNel[Coding[TumorContent.Method.Value]],
+       with CodeableConcept.codingNel[Coding[TumorContent.Method.Value]],
      Required
    ]
    with Observation.valueQuantity[Quantity,Required]
@@ -38,8 +38,8 @@ case class ObsTumorContent
 (
   id: String,
   status: Observation.Status.Value,
-  subject: Reference[MTBPatient],
-  specimen: Reference[TumorSpecimen],
+  subject: LogicalReference[MTBPatient],
+  specimen: LogicalReference[TumorSpecimen],
   method: BasicCodeableConcept[TumorContent.Method.Value],
   valueQuantity: SimpleQuantity
 )
@@ -77,8 +77,8 @@ case class ObsTMB
 (
   id: String,
   status: Observation.Status.Value,
-  subject: Reference[MTBPatient],
-  specimen: Reference[TumorSpecimen],
+  subject: LogicalReference[MTBPatient],
+  specimen: LogicalReference[TumorSpecimen],
   valueQuantity: SimpleQuantity
 )
 extends ObsTMBProfile
@@ -110,8 +110,8 @@ case class ObsMSI
 (
   id: String,
   status: Observation.Status.Value,
-  subject: Reference[MTBPatient],
-  specimen: Reference[TumorSpecimen],
+  subject: LogicalReference[MTBPatient],
+  specimen: LogicalReference[TumorSpecimen],
   valueQuantity: SimpleQuantity
 )
 extends ObsMSIProfile
@@ -142,8 +142,8 @@ case class ObsBRCAness
 (
   id: String,
   status: Observation.Status.Value,
-  subject: Reference[MTBPatient],
-  specimen: Reference[TumorSpecimen],
+  subject: LogicalReference[MTBPatient],
+  specimen: LogicalReference[TumorSpecimen],
   valueQuantity: SimpleQuantity
 )
 extends ObsBRCAnessProfile
@@ -205,9 +205,9 @@ final case class SomaticNGSReport
   identifier: NonEmptyList[Identifier],
   issued: LocalDate,
   status: DiagnosticReport.Status.Value,
-  subject: Reference[MTBPatient],
-  specimen: NonEmptyList[Reference[TumorSpecimen]],
-  result: NonEmptyList[Reference[Observation]],
+  subject: LogicalReference[MTBPatient],
+  specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
+  result: NonEmptyList[LiteralReference[Observation]],
   contained: (
     List[ObsTumorContent],
     ObsTMB,
