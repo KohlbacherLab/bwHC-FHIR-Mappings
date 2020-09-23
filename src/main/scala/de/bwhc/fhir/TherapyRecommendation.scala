@@ -9,6 +9,7 @@ import org.hl7.fhir.r4
 import org.hl7.fhir.r4._
 import org.hl7.fhir.r4.CarePlan._
 import org.hl7.fhir.r4.MedicationRequest._
+import org.hl7.fhir.r4.ServiceRequest._
 
 import play.api.libs.json.Json
 
@@ -73,18 +74,6 @@ extends MedicationRequest
    with MedicationRequest.supportingInformation[SomaticVariantProfile,Optional]
 
 
-trait MTBCarePlanProfile
-extends CarePlan
-   with CarePlan.identifierNel
-   with CarePlan.subject[Patient]
-   with CarePlan.created[LocalDate,Optional]
-   with CarePlan.description[Optional]
-   with CarePlan.activityNel[
-     CarePlan.ActivityElement
-       with CarePlan.Activity.reference[TherapyRecommendationProfile]
-   ]
-
-
 
 final case class TherapyRecommendation
 (
@@ -108,10 +97,100 @@ object TherapyRecommendation
   import org.hl7.fhir.r4.json.contained._
 
   implicit val profiles =
-    Meta.Profiles[TherapyRecommendation]("http://bwhc-mtb-therapy-recommendation")
+    Meta.Profiles[TherapyRecommendation]("http://bwhc.de/mtb/therapy-recommendation")
     
   implicit val format = Json.format[TherapyRecommendation]
 }
+
+
+
+trait CounsellingRequestProfile
+extends ServiceRequest
+   with ServiceRequest.identifierNel
+   with ServiceRequest.subject[Patient]
+//   with ServiceRequest.categoryNel[
+//     CodeableConcept with CodeableConcept.codingNel[Coding[SNOMEDCT]]
+//   ]
+//   with ServiceRequest.code[
+//     CodeableConcept with CodeableConcept.codingNel[Coding[SNOMEDCT]],
+//       Required
+//   ]
+
+
+final case class CounsellingRequest
+(
+  identifier: NonEmptyList[Identifier],
+  status: ServiceRequest.Status.Value,
+  intent: ServiceRequest.Intent.Value,
+  subject: LogicalReference[Patient],
+//  category: NonEmptyList[BasicCodeableConcept[SNOMEDCT]],
+//  code: BasicCodeableConcept[SNOMEDCT]
+)
+extends CounsellingRequestProfile
+
+object CounsellingRequest
+{
+
+  implicit val profiles =
+    Meta.Profiles[CounsellingRequest]("http://bwhc.de/mtb/genetic-counselling-request")
+  
+  import org.hl7.fhir.r4.json._
+
+  implicit val format = Json.format[CounsellingRequest]
+
+}
+
+
+trait RebiopsyRequestProfile
+extends ServiceRequest
+   with ServiceRequest.identifierNel
+   with ServiceRequest.subject[Patient]
+//   with ServiceRequest.categoryNel[
+//     CodeableConcept with CodeableConcept.codingNel[Coding[SNOMEDCT]]
+//   ]
+//   with ServiceRequest.code[
+//     CodeableConcept with CodeableConcept.codingNel[Coding[SNOMEDCT]],
+//       Required
+//   ]
+   with ServiceRequest.specimenNel[TumorSpecimen]
+
+
+final case class RebiopsyRequest
+(
+  identifier: NonEmptyList[Identifier],
+  status: ServiceRequest.Status.Value,
+  intent: ServiceRequest.Intent.Value,
+  subject: LogicalReference[Patient],
+//  category: NonEmptyList[BasicCodeableConcept[SNOMEDCT]],
+//  code: BasicCodeableConcept[SNOMEDCT],
+  specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
+)
+extends RebiopsyRequestProfile
+
+object RebiopsyRequest
+{
+
+  implicit val profiles =
+    Meta.Profiles[RebiopsyRequest]("http://bwhc.de/mtb/rebiopsy-request")
+  
+  import org.hl7.fhir.r4.json._
+
+  implicit val format = Json.format[RebiopsyRequest]
+
+}
+
+
+
+trait MTBCarePlanProfile
+extends CarePlan
+   with CarePlan.identifierNel
+   with CarePlan.subject[Patient]
+   with CarePlan.created[LocalDate,Optional]
+   with CarePlan.description[Optional]
+   with CarePlan.activityNel[
+     CarePlan.ActivityElement
+       with CarePlan.Activity.reference[TherapyRecommendationProfile]
+   ]
 
 
 final case class MTBCarePlan
@@ -130,7 +209,9 @@ extends MTBCarePlanProfile
 object MTBCarePlan
 {
 
-  implicit val profiles = Meta.Profiles[MTBCarePlan]("http://bwhc.de/mtb/careplan")
+  implicit val profiles =
+    Meta.Profiles[MTBCarePlan]("http://bwhc.de/mtb/careplan")
+  
   
   case class Activity
   (

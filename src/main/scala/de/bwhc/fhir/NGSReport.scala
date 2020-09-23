@@ -223,19 +223,7 @@ extends SomaticNGSReportProfile
 object SomaticNGSReport
 {
 
-/*
-  final case class Results
-  (
-    tumorContent:   List[ObsTumorContentProfile],
-    tmb:            ObsTMBProfile,
-    msi:            ObsMSIProfile,
-    brcaness:       ObsBRCAnessProfile,
-    simpleVariants: List[SimpleVariantProfile]
-  )
-  extends SomaticNGSReportProfile.Results
-*/
-
-  implicit val profile = Meta.Profiles[SomaticNGSReport]("http://bwhc-somatic-ngs-report")
+  implicit val profile = Meta.Profiles[SomaticNGSReport]("http://bwhc.de/mtb/somatic-ngs-report")
 
   implicit val code = LOINC.Code[SomaticNGSReport]("TODO: LOINC NGS Report",Some("Somatic NGS Report"))
 
