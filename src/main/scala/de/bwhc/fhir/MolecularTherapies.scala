@@ -19,16 +19,15 @@ import de.bwhc.mtb.data.entry.dtos.MolecularTherapy.{
 }
 
 
-
-
 sealed trait MolecularTherapy
 extends MedicationStatement
    with MedicationStatement.identifierNel
    with MedicationStatement.subject[Patient,Required]
+//   with MedicationStatement.reasonReferenceNel[Diagnosis]
    with MedicationStatement.basedOnNel[TherapyRecommendationProfile]
    with MedicationStatement.dateAsserted[LocalDate,Required]
    with MedicationStatement.medicationReference[MTBMedicationProfile]
-   with MedicationStatement.noteNel[Annotation]
+   with MedicationStatement.note[Annotation,Optional]
 
 
 final case class Note(text: String) extends Annotation
@@ -132,9 +131,10 @@ final case class NotTakenMolecularTherapy
   basedOn: NonEmptyList[LogicalReference[TherapyRecommendation]],
   dateAsserted: LocalDate,
   subject: LogicalReference[MTBPatient],
+//  reasonReference: NonEmptyList[LogicalReference[Diagnosis]],
   medicationReference: LiteralReference[MTBMedication],
   statusReason: NonEmptyList[BasicCodeableConcept[NotDoneReason.Value]],
-  note: NonEmptyList[Note],
+  note: Option[List[Note]],
 )
 extends MolecularTherapy
    with MedicationStatement.statusReasonNel[
@@ -151,11 +151,12 @@ final case class StoppedMolecularTherapy
   basedOn: NonEmptyList[LogicalReference[TherapyRecommendation]],
   dateAsserted: LocalDate,
   subject: LogicalReference[MTBPatient],
+//  reasonReference: NonEmptyList[LogicalReference[Diagnosis]],
   medicationReference: LiteralReference[MTBMedication],
   effectivePeriod: ClosedPeriod[LocalDate],
   dosage: Option[List[DosageDensity]],
   statusReason: NonEmptyList[BasicCodeableConcept[StopReason.Value]],
-  note: NonEmptyList[Note],
+  note: Option[List[Note]],
 )
 extends MolecularTherapy
    with MedicationStatement.contained[Product1[MTBMedicationProfile]]
@@ -176,10 +177,11 @@ final case class CompletedMolecularTherapy
   basedOn: NonEmptyList[LogicalReference[TherapyRecommendation]],
   dateAsserted: LocalDate,
   subject: LogicalReference[MTBPatient],
+//  reasonReference: NonEmptyList[LogicalReference[Diagnosis]],
   medicationReference: LiteralReference[MTBMedication],
   effectivePeriod: ClosedPeriod[LocalDate],
   dosage: Option[List[DosageDensity]],
-  note: NonEmptyList[Note],
+  note: Option[List[Note]],
 )
 extends MolecularTherapy
    with MedicationStatement.contained[Product1[MTBMedicationProfile]]
@@ -197,10 +199,11 @@ final case class ActiveMolecularTherapy
   basedOn: NonEmptyList[LogicalReference[TherapyRecommendation]],
   dateAsserted: LocalDate,
   subject: LogicalReference[MTBPatient],
+//  reasonReference: NonEmptyList[LogicalReference[Diagnosis]],
   medicationReference: LiteralReference[MTBMedication],
   effectivePeriod: OpenEndPeriod[LocalDate],
   dosage: Option[List[DosageDensity]],
-  note: NonEmptyList[Note],
+  note: Option[List[Note]],
 )
 extends MolecularTherapy
    with MedicationStatement.contained[Product1[MTBMedicationProfile]]

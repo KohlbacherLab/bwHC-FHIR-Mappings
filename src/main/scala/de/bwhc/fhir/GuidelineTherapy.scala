@@ -32,6 +32,7 @@ extends MedicationStatement
    with MedicationStatement.extensions[Product1[TherapyLine],Optional]
    with MedicationStatement.contained[Product1[MTBMedicationProfile]]
    with MedicationStatement.subject[Patient,Required]
+   with MedicationStatement.reasonReferenceNel
    with MedicationStatement.medicationReference[MTBMedicationProfile]
 
 trait LastGuidelineTherapyProfile
@@ -51,6 +52,7 @@ final case class PreviousGuidelineTherapy
   contained: Tuple1[MTBMedication],
   status: MedicationStatement.Status.Value,
   subject: LogicalReference[MTBPatient],
+  reasonReference: NonEmptyList[LogicalReference[Condition]],
   medicationReference: LiteralReference[MTBMedication]
 )
 extends GuidelineTherapyProfile
@@ -64,6 +66,7 @@ final case class LastGuidelineTherapy
   status: MedicationStatement.Status.Value,
   statusReason: Optional[List[BasicCodeableConcept[GuidelineTherapy.StopReason.Value]]],
   subject: LogicalReference[MTBPatient],
+  reasonReference: NonEmptyList[LogicalReference[Condition]],
   effectivePeriod: Option[OpenEndPeriod[LocalDate]],
   medicationReference: LiteralReference[MTBMedication]
 )

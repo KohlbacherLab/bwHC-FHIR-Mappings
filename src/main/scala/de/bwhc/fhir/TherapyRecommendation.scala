@@ -19,7 +19,6 @@ import de.bwhc.mtb.data.entry.dtos.LevelOfEvidence
 final case class LoE(
   grade: LoE.Grade,
   addendums: Set[LoE.Addendum]
-//  addendums: Option[Set[LoE.Addendum]]
 )
 extends Extension
 
@@ -38,11 +37,13 @@ object LoE
 
   final case class Grade(
     value: BasicCoding[LevelOfEvidence.Grading.Value]
-  ) extends SimpleExtension[BasicCoding[LevelOfEvidence.Grading.Value]]
+  )
+  extends SimpleExtension[BasicCoding[LevelOfEvidence.Grading.Value]]
 
   final case class Addendum(
     value: BasicCoding[LevelOfEvidence.Addendum.Value]
-  ) extends SimpleExtension[BasicCoding[LevelOfEvidence.Addendum.Value]]
+  )
+  extends SimpleExtension[BasicCoding[LevelOfEvidence.Addendum.Value]]
 
   object Grade
   {
@@ -57,7 +58,7 @@ object LoE
   }
 
   implicit val url       = Extension.Url[LoE]("mtb-level-of-evidence")
-  implicit val formatLoE = format[LoE]
+  implicit val formatLoE = json.extensions.format[LoE]
 
 }
 
@@ -67,6 +68,7 @@ extends MedicationRequest
    with MedicationRequest.identifierNel
    with MedicationRequest.extensions[Product1[LoE],Optional]
    with MedicationRequest.subject[Patient]
+   with MedicationRequest.reasonReferenceNel
    with MedicationRequest.contained[Product1[MTBMedicationProfile]]
    with MedicationRequest.authoredOn[LocalDate,Optional]
    with MedicationRequest.priority[Optional]
@@ -85,6 +87,7 @@ final case class TherapyRecommendation
   intent: MedicationRequest.Intent.Value,
   authoredOn: Option[LocalDate],
   subject: LogicalReference[MTBPatient],
+  reasonReference: NonEmptyList[LogicalReference[Condition]],
   medicationReference: LiteralReference[Medication],
   supportingInformation: Option[List[LogicalReference[SomaticVariantProfile]]]
 //  supportingInformation: NonEmptyList[Reference[SomaticVariantProfile]]
@@ -185,11 +188,13 @@ trait MTBCarePlanProfile
 extends CarePlan
    with CarePlan.identifierNel
    with CarePlan.subject[Patient]
+   with CarePlan.addressesNel
    with CarePlan.created[LocalDate,Optional]
    with CarePlan.description[Optional]
-   with CarePlan.activityNel[
+   with CarePlan.activity[
      CarePlan.ActivityElement
-       with CarePlan.Activity.reference[TherapyRecommendationProfile]
+       with CarePlan.Activity.reference[TherapyRecommendationProfile],
+     Required
    ]
 
 
@@ -200,8 +205,9 @@ final case class MTBCarePlan
   intent: CarePlan.Intent.Value,
   created: Option[LocalDate],
   subject: LogicalReference[MTBPatient],
+  addresses: NonEmptyList[LogicalReference[Diagnosis]],
   description: Option[String],
-  activity: NonEmptyList[MTBCarePlan.Activity] 
+  activity: List[MTBCarePlan.Activity] 
 )
 extends MTBCarePlanProfile
 

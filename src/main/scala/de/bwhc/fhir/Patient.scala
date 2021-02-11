@@ -36,7 +36,6 @@ final case class MTBPatient
   birthDate: Option[LocalDate],
   deceasedDateTime: Option[LocalDate],
   managingOrganization: Option[LogicalReference[ZPM]],
-//  managingOrganization: Option[Reference[ZPM]],
   contact: Option[List[MTBPatient.HealthInsuranceContact]]
 ) extends MTBPatientProfile
 
@@ -58,6 +57,7 @@ object MTBPatient
     
   implicit val formatContact = Json.format[HealthInsuranceContact]
 
+//  implicit val formatPatient = FHIRJson.format[MTBPatient]
   implicit val formatPatient = Json.format[MTBPatient]
   
 }

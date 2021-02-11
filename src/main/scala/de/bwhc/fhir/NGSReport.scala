@@ -14,49 +14,49 @@ import org.hl7.fhir.r4.json._
 
 import play.api.libs.json.Json
 
-import de.bwhc.mtb.data.entry.dtos.TumorContent
+import de.bwhc.mtb.data.entry.dtos.TumorCellContent
 
 
 //-----------------------------------------------------------------------------
 // Tumor Content
 //-----------------------------------------------------------------------------
 
-abstract class ObsTumorContentProfile
+abstract class ObsTumorCellContentProfile
 extends Observation
    with Observation.id[Required]
    with Observation.subject[Patient,Required]
    with Observation.specimen[Required]
    with Observation.method[
      CodeableConcept
-       with CodeableConcept.codingNel[Coding[TumorContent.Method.Value]],
+       with CodeableConcept.codingNel[Coding[TumorCellContent.Method.Value]],
      Required
    ]
    with Observation.valueQuantity[Quantity,Required]
 
 
-case class ObsTumorContent
+case class ObsTumorCellContent
 (
   id: String,
   status: Observation.Status.Value,
   subject: LogicalReference[MTBPatient],
   specimen: LogicalReference[TumorSpecimen],
-  method: BasicCodeableConcept[TumorContent.Method.Value],
+  method: BasicCodeableConcept[TumorCellContent.Method.Value],
   valueQuantity: SimpleQuantity
 )
-extends ObsTumorContentProfile
+extends ObsTumorCellContentProfile
 
-object ObsTumorContent
+object ObsTumorCellContent
 {
 
   implicit val profiles =
-    Meta.Profiles[ObsTumorContent]("http://observation-tumor-content")
+    Meta.Profiles[ObsTumorCellContent]("http://observation-tumor-content")
 
-  implicit val code = LOINC.Code[ObsTumorContent]("TODO: LOINC tumor-content", Some("Tumor Content"))
+  implicit val code = LOINC.Code[ObsTumorCellContent]("TODO: LOINC tumor-content", Some("Tumor Content"))
 
   implicit val tcMethodSystem =
-    Coding.System[TumorContent.Method.Value]("tumor-content-method")
+    Coding.System[TumorCellContent.Method.Value]("tumor-content-method")
     
-  implicit val format = Json.format[ObsTumorContent]
+  implicit val format = Json.format[ObsTumorCellContent]
   
 }
 
@@ -173,7 +173,7 @@ extends DiagnosticReport
 //   with DiagnosticReport.contained[SomaticNGSReportProfile.Results]
    with DiagnosticReport.contained[
      Product5[
-       List[ObsTumorContentProfile],
+       List[ObsTumorCellContentProfile],
        ObsTMBProfile,
        ObsMSIProfile,
        ObsBRCAnessProfile,
@@ -189,7 +189,7 @@ object SomaticNGSReportProfile
   {
     this: Product =>
 
-    val tumorContent:   List[ObsTumorContentProfile]
+    val tumorContent:   List[ObsTumorCellContentProfile]
     val tmb:            ObsTMBProfile
     val msi:            ObsMSIProfile
     val brcaness:       ObsBRCAnessProfile
@@ -209,7 +209,7 @@ final case class SomaticNGSReport
   specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
   result: NonEmptyList[LiteralReference[Observation]],
   contained: (
-    List[ObsTumorContent],
+    List[ObsTumorCellContent],
     ObsTMB,
     ObsMSI,
     ObsBRCAness,

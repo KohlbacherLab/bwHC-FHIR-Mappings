@@ -41,6 +41,8 @@ object CodingSystems
     System[ATC]("http://fhir.de/CodeSystem/dimdi/atc")
 
 
+  implicit val recistSystem =
+    System[RECIST.Value]("RECIST")
 
 
 }
