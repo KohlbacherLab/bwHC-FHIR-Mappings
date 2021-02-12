@@ -34,6 +34,14 @@ object Mappings
   }
 
 
+  implicit def mapBundleEntry[R <: Resource,T](
+    implicit f: R => T
+  ): Bundle.EntryElement with Bundle.Entry.resource[R] => T = {
+    entry => entry.resource.mapTo[T]
+  }
+
+
+
   implicit def openEndPeriodToFHIR[T <: Temporal]: dtos.OpenEndPeriod[T] => OpenEndPeriod[T] =
     p => OpenEndPeriod(p.start,p.end)
 
@@ -340,6 +348,11 @@ object Mappings
       dtos.FamilyMember.Relationship.FamilyMember         -> HL7v3FamilyMember.FAMMEMB ,
       dtos.FamilyMember.Relationship.ExtendedFamilyMember -> HL7v3FamilyMember.EXT     
     )
+
+  implicit val familyMemberRelationshipFromHL7v3 =
+    familyMemberRelationshipToHL7v3.invert
+
+
   
   implicit val familyMemberDiagnosisToFHIR: 
     dtos.FamilyMemberDiagnosis => FamilyMemberHistoryDTO =
@@ -351,6 +364,17 @@ object Mappings
           BasicCodeableConcept(BasicCoding(diag.relationship.code))
         )
 
+  implicit val familyMemberDiagnosisFromFHIR: 
+    FamilyMemberHistoryDTO => dtos.FamilyMemberDiagnosis =
+      fmh =>
+        dtos.FamilyMemberDiagnosis(
+          fmh.identifier.head,
+          fmh.patient.identifier,
+          dtos.Coding(
+            HL7v3FamilyMember.withName(fmh.relationship.coding.head.code).mapTo[dtos.FamilyMember.Relationship.Value],
+            None
+          )
+        )
 /*
 
   //---------------------------------------------------------------------------
@@ -1059,9 +1083,7 @@ object Mappings
 
   implicit val molTherapyDocToFHIR:
     dtos.MolecularTherapyDocumentation => MolecularTherapyHistory = {
-
       doc =>
-
         MolecularTherapyHistory(
           Bundle.History.Entries(
             doc.history.map(_.mapTo[MolecularTherapy]).map(EntryOf(_))
@@ -1136,20 +1158,19 @@ object Mappings
       }
   }
 
+
   implicit val molTherapyDocFromFHIR:
     MolecularTherapyHistory => dtos.MolecularTherapyDocumentation = {
-
-      doc =>
-
-        val Bundle.History.Entries(entries) = doc.entry
-
+      bundle =>
         dtos.MolecularTherapyDocumentation(
-          entries.map(_.resource).map(_.mapTo[dtos.MolecularTherapy])
+          bundle.entry.list.map(_.mapTo[dtos.MolecularTherapy])
         )
-
     }
 
 
+  //---------------------------------------------------------------------------
+  // Response mappings
+  //---------------------------------------------------------------------------
 
   implicit def responseIdFromIdentifier(id: Identifier) =
     dtos.Response.Id(id.value)
@@ -1194,10 +1215,12 @@ object Mappings
     mtbfile =>
       
       MTBFileBundle(
-        Identifier("TODO"),  
         MTBFileEntries(
           EntryOf(mtbfile.patient.mapTo[MTBPatient]),
+          EntryOf(mtbfile.episode.mapTo[MTBEpisode]),
+          EntryOf(mtbfile.consent.mapTo[BwHCConsent]),
           mtbfile.diagnoses.getOrElse(List.empty).map(_.mapTo[Diagnosis]).map(EntryOf(_)),
+          mtbfile.familyMemberDiagnoses.getOrElse(List.empty).map(_.mapTo[FamilyMemberHistoryDTO]).map(EntryOf(_)),
           mtbfile.previousGuidelineTherapies.getOrElse(List.empty).map(_.mapTo[PreviousGuidelineTherapy]).map(EntryOf(_)),
           mtbfile.lastGuidelineTherapy.map(_.mapTo[LastGuidelineTherapy]).map(EntryOf(_)),
           mtbfile.ecogStatus.getOrElse(List.empty).map(_.mapTo[ObsECOG]).map(EntryOf(_)),
@@ -1243,12 +1266,6 @@ case class MTBFile
 */
 
 
-  implicit def mapBundleEntry[R <: Resource,T](
-    implicit f: R => T
-  ): Bundle.EntryElement with Bundle.Entry.resource[R] => T = {
-    entry => entry.resource.mapTo[T]
-  }
-
 
   implicit val mtbFileFromFHIR: MTBFileBundle => dtos.MTBFile = {
     bundle =>
@@ -1257,10 +1274,11 @@ case class MTBFile
 
       dtos.MTBFile(
         patient,
-  dtos.Consent(dtos.Consent.Id("TODO"), patient.id, dtos.Consent.Status.Active), //TODO
-  dtos.MTBEpisode(dtos.MTBEpisode.Id("TODO"), patient.id, dtos.OpenEndPeriod(LocalDate.now)), //TODO
+        bundle.entry.consent.mapTo[dtos.Consent],
+        bundle.entry.episode.mapTo[dtos.MTBEpisode],
         Some(bundle.entry.diagnoses.map(_.mapTo[dtos.Diagnosis])).filterNot(_.isEmpty),
-    None, //TODO
+        Some(bundle.entry.familyMemberDiagnoses.map(_.mapTo[dtos.FamilyMemberDiagnosis])).filterNot(_.isEmpty),
+//    None, //TODO
         Some(bundle.entry.previousGLTherapies.map(_.mapTo[dtos.PreviousGuidelineTherapy])),
         bundle.entry.lastGLTherapy.map(_.mapTo[dtos.LastGuidelineTherapy]),
         Some(bundle.entry.ecogs.map(_.mapTo[dtos.ECOGStatus])),

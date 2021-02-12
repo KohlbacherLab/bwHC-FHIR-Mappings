@@ -22,7 +22,6 @@ final case class BwHCConsent
   identifier: NonEmptyList[Identifier],
   status: Consent.Status.Value,
   patient: LogicalReference[MTBPatient],
-//  patient: Reference[MTBPatient],
   scope: BasicCodeableConcept[Consent.Scope.Value]
 )
 extends BwHCConsentProfile

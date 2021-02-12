@@ -16,7 +16,7 @@ import cats.data.NonEmptyList
 
 trait MTBFileBundleProfile
 extends Bundle.Collection
-   with Bundle.identifier[Required]
+//   with Bundle.identifier[Required]
    with Bundle.entry[MTBFileEntriesProfile]
   
 
@@ -26,8 +26,10 @@ extends Bundle.EntrySet
   this: Product =>
 
   val patient:                EntryElement with Entry.resource[MTBPatientProfile]
+  val episode:                EntryElement with Entry.resource[MTBEpisodeProfile]  
+  val consent:                EntryElement with Entry.resource[BwHCConsentProfile]  
   val diagnoses:              List[EntryElement with Entry.resource[DiagnosisProfile]]
-//  val familyMemberDiagnoses:        List[EntryElement with Entry.resource[FamilyMemberHistoryProfile]]
+  val familyMemberDiagnoses:  List[EntryElement with Entry.resource[FamilyMemberHistoryProfile]]
   val previousGLTherapies:    List[EntryElement with Entry.resource[GuidelineTherapyProfile]]
   val lastGLTherapy:          Option[EntryElement with Entry.resource[LastGuidelineTherapyProfile]]
   val ecogs:                  List[EntryElement with Entry.resource[ObsECOGProfile]]
@@ -44,7 +46,7 @@ extends Bundle.EntrySet
 
 case class MTBFileBundle
 (
-  identifier: Identifier,
+//  identifier: Identifier,
   entry: MTBFileEntries
 )
 extends MTBFileBundleProfile
@@ -52,7 +54,10 @@ extends MTBFileBundleProfile
 final case class MTBFileEntries
 (
   patient:                EntryOf[MTBPatient],
+  episode:                EntryOf[MTBEpisode],
+  consent:                EntryOf[BwHCConsent],
   diagnoses:              List[EntryOf[Diagnosis]],
+  familyMemberDiagnoses:  List[EntryOf[FamilyMemberHistoryDTO]],
   previousGLTherapies:    List[EntryOf[PreviousGuidelineTherapy]],
   lastGLTherapy:          Option[EntryOf[LastGuidelineTherapy]],
   ecogs:                  List[EntryOf[ObsECOG]],
