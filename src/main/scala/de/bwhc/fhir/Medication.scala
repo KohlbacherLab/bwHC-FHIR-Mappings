@@ -22,15 +22,20 @@ import CodingSystems._
 trait MTBMedicationProfile
 extends Medication
    with Medication.id[Required]
-   with Medication.ingredientNel[
-     Medication.IngredientElement[CodeableConcept]
+   with Medication.ingredient[
+     Medication.IngredientElement[CodeableConcept],
+     Required
    ]
+//   with Medication.ingredientNel[
+//     Medication.IngredientElement[CodeableConcept]
+//   ]
 
 
 final case class MTBMedication
 (
   id: String,
-  ingredient: NonEmptyList[MTBMedication.Ingredient]
+//  ingredient: NonEmptyList[MTBMedication.Ingredient]
+  ingredient: List[MTBMedication.Ingredient]
 )
 extends MTBMedicationProfile
 

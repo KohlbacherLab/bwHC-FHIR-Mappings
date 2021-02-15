@@ -39,7 +39,8 @@ extends Observation
 object ObsHistologyProfile
 {
 
-  implicit def code[O <: ObsHistology] = LOINC.Code[O]("59847-4")
+  implicit def code[O <: ObsHistology] = Code[O](LOINC("59847-4"))
+//  implicit def code[O <: ObsHistology] = LOINC.Code[O]("59847-4")
 
 }
 
@@ -73,7 +74,6 @@ object ObsHistology
   implicit val profile =
     Meta.Profiles[ObsHistology]("http://de.bwhc/histology")
     
-//  implicit val code = LOINC.Code[ObsHistology]("59847-4")
 
   import ObsHistologyProfile._
 

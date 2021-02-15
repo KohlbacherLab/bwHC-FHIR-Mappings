@@ -47,7 +47,8 @@ object ObsECOG
   implicit val profiles = Meta.Profiles[ObsECOG]("http://de.bwhc/obs-ecog-performance-status")
     
     
-  implicit val code = LOINC.Code[ObsECOG]("89247-1")
+  implicit val code = Code[ObsECOG](LOINC("89247-1"))
+//  implicit val code = LOINC.Code[ObsECOG]("89247-1")
 
 
   implicit val formatObsECOG = Json.format[ObsECOG]

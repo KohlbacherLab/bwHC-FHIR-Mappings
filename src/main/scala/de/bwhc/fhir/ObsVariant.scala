@@ -46,6 +46,13 @@ object ObsVariant
     implicit val system = Coding.System[SequenceOntology]("http://www.sequenceontology.org")
   }
 
+  sealed trait TBD_LOINC
+  object TBD_LOINC
+  {
+    implicit val system = Coding.System[TBD_LOINC]("http://hl7.org/fhir/uv/genomics-reporting/CodeSystem/tbd-codes")
+  }
+
+
 
 
   final case class GeneStudied(valueCodeableConcept: BasicCodeableConcept[HGNC])
@@ -170,6 +177,39 @@ object ObsVariant
   }
 
 
+
+  implicit val codeGeneStudied =
+    Code[GeneStudied](LOINC("48018-6",Some("GeneStudied")))
+ 
+  implicit val codeFunctionalAnnotation =
+    Code[FunctionalAnnotation,TBD_LOINC]("functional-annotation",Some("FunctionalAnnotation"))
+ 
+  implicit val codeExactStartEnd =
+    Code[ExactStartEnd,TBD_LOINC]("exact-start-end",Some("Exact start-end"))
+//    Code[ExactStartEnd](LOINC("exact-start-end",Some("Exact start-end")))
+ 
+  implicit val codeRefAllele =
+    Code[RefAllele](LOINC("69547-8",Some("RefAllele")))
+ 
+  implicit val codeAltAllele =
+    Code[AltAllele](LOINC("69551-0",Some("AltAllele")))
+ 
+  implicit val codeAminoAcidChange =
+    Code[AminoAcidChange](LOINC("48005-3",Some("AminoAcidChange")))
+ 
+  implicit val codeDNAChange =
+    Code[DNAChange](LOINC("48004-6",Some("DNAChange")))
+ 
+  implicit val codeDbSNPId =
+    Code[DbSNPId](LOINC("81255-2",Some("dbSNPId")))
+ 
+  implicit val codeSampleAllFreq =
+    Code[SampleAllelicFrequency](LOINC("81258-6",Some("SampleAllelicFrequency")))
+ 
+  implicit val codeAllelicReadDepth =
+    Code[AllelicReadDepth](LOINC("82121-5",Some("AllelicReadDepth")))
+
+/*
   implicit val codeGeneStudied =
     LOINC.Code[GeneStudied]("48018-6",Some("GeneStudied"))
  
@@ -199,7 +239,7 @@ object ObsVariant
  
   implicit val codeAllelicReadDepth =
     LOINC.Code[AllelicReadDepth]("82121-5",Some("AllelicReadDepth"))
-
+*/
 
   implicit val formatGeneStudied            = Json.format[GeneStudied]
   implicit val formatFunctionalAnnotation   = Json.format[FunctionalAnnotation]
@@ -283,9 +323,11 @@ object SimpleVariant
      with ObsVariant.component.allelicReadDepth[Required]
 
 
-  implicit val profile = Meta.Profiles[SimpleVariant]("http://bwhc-genetics-simple-somatic-variant")
+  implicit val profile =
+    Meta.Profiles[SimpleVariant]("http://bwhc-genetics-simple-somatic-variant")
 
-  implicit val code = LOINC.Code[SimpleVariant]("69548-6")
+  implicit val code =
+    Code[SimpleVariant](LOINC("69548-6"))
 
 
   import org.hl7.fhir.r4.json._

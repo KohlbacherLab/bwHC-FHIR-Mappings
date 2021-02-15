@@ -478,6 +478,37 @@ object Mappings
   import de.bwhc.mtb.data.entry.dtos.{Medication => ATC}
 
 
+  implicit val medicationSetToFHIR: List[dtos.Coding[ATC]] => MTBMedication = {
+    meds =>
+      val id = meds.map(_.code.value).reduceLeftOption(_ + "-" + _).getOrElse(java.util.UUID.randomUUID.toString)
+      MTBMedication(
+        id,
+        meds.map(m =>
+          MTBMedication.Ingredient(
+            BasicCodeableConcept(
+              BasicCoding[ATC](
+                m.code.value,
+                m.display,
+              )
+            )
+          )
+        )
+      )
+  }
+
+  implicit val medicationListFromFHIR: MTBMedication => List[dtos.Coding[ATC]] = {
+    m =>
+      m.ingredient
+        .map(_.itemCodeableConcept.coding.head)
+        .map(c =>
+          dtos.Coding(
+            dtos.Medication(c.code),
+            c.display
+          )
+        )
+  }
+
+/*
   implicit val medicationSetToFHIR: NonEmptyList[dtos.Coding[ATC]] => MTBMedication = {
     meds =>
       val id = meds.map(_.code.value).reduceLeft(_ + "-" + _)
@@ -507,7 +538,7 @@ object Mappings
           )
         )
   }
-
+*/
 
 
   //---------------------------------------------------------------------------
@@ -525,7 +556,8 @@ object Mappings
 
     th =>
 
-      val medication = th.medication.mapTo[MTBMedication]
+      val medication = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
+//      val medication = th.medication.mapTo[MTBMedication]
 
       PreviousGuidelineTherapy(
         NonEmptyList.one(th.id),
@@ -546,7 +578,8 @@ object Mappings
       th.subject.identifier,
         th.reasonReference.head.identifier,
         th.extension.map { case Tuple1(l) => dtos.TherapyLine(l.value) },
-        th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]]
+        Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]])
+//        th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]]
       )
 
   }
@@ -559,7 +592,8 @@ object Mappings
 
       import LastGuidelineTherapy._
 
-      val med = th.medication.mapTo[MTBMedication]
+      val med = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
+//      val med = th.medication.mapTo[MTBMedication]
 
       LastGuidelineTherapy(
         NonEmptyList.one(th.id),
@@ -589,7 +623,8 @@ object Mappings
       th.reasonReference.head.identifier,
         th.extension.map { case Tuple1(ext) => dtos.TherapyLine(ext.value.value) },
         th.period.map(_.mapTo[dtos.OpenEndPeriod[LocalDate]]),
-        th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
+        Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
+//        th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
         th.statusReason.flatMap(_.headOption)
           .map(cc =>
             dtos.Coding[StopReason.Value](
@@ -877,7 +912,8 @@ object Mappings
 
         import LoE._
 
-        val med = rec.medication.mapTo[MTBMedication]
+        val med = rec.medication.getOrElse(List.empty).mapTo[MTBMedication]
+//        val med = rec.medication.mapTo[MTBMedication]
 
         TherapyRecommendation(
           NonEmptyList.one(rec.id),
@@ -914,7 +950,8 @@ object Mappings
           rec.subject.identifier,
           rec.reasonReference.head.identifier,
           rec.authoredOn,
-          rec.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
+          Some(rec.contained._1.mapTo[List[dtos.Coding[ATC]]]),
+//          rec.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
           rec.priority.map(_.mapTo[dtos.TherapyRecommendation.Priority.Value]),
           rec.extension.map { case Tuple1(loe) =>
             dtos.LevelOfEvidence(
@@ -1026,7 +1063,8 @@ object Mappings
 
         case th: dtos.StoppedTherapy => {
 
-          val medication = th.medication.mapTo[MTBMedication]
+          val medication = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
+//          val medication = th.medication.mapTo[MTBMedication]
 
           StoppedMolecularTherapy(
             identifier,
@@ -1046,7 +1084,8 @@ object Mappings
 
         case th: dtos.CompletedTherapy => {
 
-          val medication = th.medication.mapTo[MTBMedication]
+          val medication = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
+//          val medication = th.medication.mapTo[MTBMedication]
 
           CompletedMolecularTherapy(
             identifier,
@@ -1063,7 +1102,8 @@ object Mappings
 
         case th: dtos.OngoingTherapy => {
 
-          val medication = th.medication.mapTo[MTBMedication]
+          val medication = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
+//          val medication = th.medication.mapTo[MTBMedication]
 
           ActiveMolecularTherapy(
             identifier,
@@ -1122,7 +1162,8 @@ object Mappings
             molTh.dateAsserted,
             th.basedOn.head.identifier,
             dtos.ClosedPeriod(th.effectivePeriod.start,th.effectivePeriod.end),
-            th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
+            Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
+//            th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
             th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
             dtos.Coding(StopReason.withName(th.statusReason.head.coding.head.code),None),
             note
@@ -1136,7 +1177,8 @@ object Mappings
             molTh.dateAsserted,
             th.basedOn.head.identifier,
             dtos.ClosedPeriod(th.effectivePeriod.start,th.effectivePeriod.end),
-            th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
+            Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
+//            th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
             th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
             note
           )
@@ -1149,7 +1191,8 @@ object Mappings
             molTh.dateAsserted,
             th.basedOn.head.identifier,
             dtos.OpenEndPeriod(th.effectivePeriod.start),
-            th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
+            Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
+//            th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
             th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
             note
           )

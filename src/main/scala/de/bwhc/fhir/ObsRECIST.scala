@@ -47,7 +47,8 @@ object ObsRECIST
   implicit val profiles =
     Meta.Profiles[ObsRECIST]("http://bwhc-mtb-therapy-response")
     
-  implicit val code = LOINC.Code[ObsRECIST]("21976-6")
+  implicit val code = Code[ObsRECIST](LOINC("21976-6"))
+//  implicit val code = LOINC.Code[ObsRECIST]("21976-6")
 
   implicit val format = Json.format[ObsRECIST]
   

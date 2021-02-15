@@ -2,7 +2,6 @@ package de.bwhc.fhir
 
 
 import java.time.LocalDate
-//import java.time.Instant
 
 import cats.data.NonEmptyList
 
@@ -51,7 +50,9 @@ object ObsTumorCellContent
   implicit val profiles =
     Meta.Profiles[ObsTumorCellContent]("http://observation-tumor-content")
 
-  implicit val code = LOINC.Code[ObsTumorCellContent]("TODO: LOINC tumor-content", Some("Tumor Content"))
+//  implicit val code = LOINC.Code[ObsTumorCellContent]("TODO: LOINC tumor-content", Some("Tumor Content"))
+  implicit val code =
+    Code[ObsTumorCellContent](LOINC("TODO: LOINC tumor-content", Some("Tumor Content")))
 
   implicit val tcMethodSystem =
     Coding.System[TumorCellContent.Method.Value]("tumor-content-method")
@@ -88,7 +89,8 @@ object ObsTMB
   implicit val profiles =
     Meta.Profiles[ObsTMB]("http://observation-tumor-mutational-burden")
 
-  implicit val code = LOINC.Code[ObsTMB]("TODO: LOINC TMB", Some("Tumor Mutational Burden"))
+  implicit val code = Code[ObsTMB](LOINC("TODO: LOINC TMB", Some("Tumor Mutational Burden")))
+//  implicit val code = LOINC.Code[ObsTMB]("TODO: LOINC TMB", Some("Tumor Mutational Burden"))
 
   implicit val format = Json.format[ObsTMB]
 }
@@ -120,7 +122,9 @@ object ObsMSI
 {
   implicit val profiles = Meta.Profiles[ObsMSI]("http://observation-msi")
 
-  implicit val code = LOINC.Code[ObsMSI]("TODO: LOINC MSI", Some("Micro-Satellite Instabilities (MSI)"))
+//  implicit val code = LOINC.Code[ObsMSI]("TODO: LOINC MSI", Some("Micro-Satellite Instabilities (MSI)"))
+  implicit val code =
+    Code[ObsMSI](LOINC("TODO: LOINC MSI", Some("Micro-Satellite Instabilities (MSI)")))
 
   implicit val format = Json.format[ObsMSI]
 }
@@ -152,7 +156,9 @@ object ObsBRCAness
 {
   implicit val profiles = Meta.Profiles[ObsBRCAness]("http://observation-brcaness")
 
-  implicit val code = LOINC.Code[ObsBRCAness]("TODO: LOINC BRCAness", Some("BRCAness"))
+  implicit val code =
+    Code[ObsBRCAness](LOINC("TODO: LOINC BRCAness", Some("BRCAness")))
+//  implicit val code = LOINC.Code[ObsBRCAness]("TODO: LOINC BRCAness", Some("BRCAness"))
 
   implicit val format = Json.format[ObsBRCAness]
 }
@@ -223,9 +229,12 @@ extends SomaticNGSReportProfile
 object SomaticNGSReport
 {
 
-  implicit val profile = Meta.Profiles[SomaticNGSReport]("http://bwhc.de/mtb/somatic-ngs-report")
+  implicit val profile =
+   Meta.Profiles[SomaticNGSReport]("http://bwhc.de/mtb/somatic-ngs-report")
 
-  implicit val code = LOINC.Code[SomaticNGSReport]("TODO: LOINC NGS Report",Some("Somatic NGS Report"))
+//  implicit val code = LOINC.Code[SomaticNGSReport]("TODO: LOINC NGS Report",Some("Somatic NGS Report"))
+  implicit val code =
+    Code[SomaticNGSReport](LOINC("TODO: LOINC NGS Report",Some("Somatic NGS Report")))
 
   import json.contained._
 
