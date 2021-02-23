@@ -48,9 +48,8 @@ object ObsTumorCellContent
 {
 
   implicit val profiles =
-    Meta.Profiles[ObsTumorCellContent]("http://observation-tumor-content")
+    Meta.Profiles[ObsTumorCellContent]("http://bwhc.de/mtb/observation-tumor-content")
 
-//  implicit val code = LOINC.Code[ObsTumorCellContent]("TODO: LOINC tumor-content", Some("Tumor Content"))
   implicit val code =
     Code[ObsTumorCellContent](LOINC("TODO: LOINC tumor-content", Some("Tumor Content")))
 
@@ -87,10 +86,9 @@ extends ObsTMBProfile
 object ObsTMB
 {
   implicit val profiles =
-    Meta.Profiles[ObsTMB]("http://observation-tumor-mutational-burden")
+    Meta.Profiles[ObsTMB]("http://bwhc.de/mtb/observation-tumor-mutational-burden")
 
   implicit val code = Code[ObsTMB](LOINC("TODO: LOINC TMB", Some("Tumor Mutational Burden")))
-//  implicit val code = LOINC.Code[ObsTMB]("TODO: LOINC TMB", Some("Tumor Mutational Burden"))
 
   implicit val format = Json.format[ObsTMB]
 }
@@ -120,9 +118,9 @@ extends ObsMSIProfile
 
 object ObsMSI
 {
-  implicit val profiles = Meta.Profiles[ObsMSI]("http://observation-msi")
+  implicit val profiles =
+    Meta.Profiles[ObsMSI]("http://bwhc.de/mtb/observation-msi")
 
-//  implicit val code = LOINC.Code[ObsMSI]("TODO: LOINC MSI", Some("Micro-Satellite Instabilities (MSI)"))
   implicit val code =
     Code[ObsMSI](LOINC("TODO: LOINC MSI", Some("Micro-Satellite Instabilities (MSI)")))
 
@@ -154,11 +152,10 @@ extends ObsBRCAnessProfile
 
 object ObsBRCAness
 {
-  implicit val profiles = Meta.Profiles[ObsBRCAness]("http://observation-brcaness")
+  implicit val profiles = Meta.Profiles[ObsBRCAness]("http://bwhc.de/mtb/observation-brcaness")
 
   implicit val code =
     Code[ObsBRCAness](LOINC("TODO: LOINC BRCAness", Some("BRCAness")))
-//  implicit val code = LOINC.Code[ObsBRCAness]("TODO: LOINC BRCAness", Some("BRCAness"))
 
   implicit val format = Json.format[ObsBRCAness]
 }
@@ -175,34 +172,35 @@ extends DiagnosticReport
    with DiagnosticReport.subject[Patient,Required]
    with DiagnosticReport.specimenNel[TumorSpecimenProfile]
    with DiagnosticReport.issued[LocalDate,Required]
+//TODO: sequencing type, metadata
    with DiagnosticReport.resultNel[Observation]
-//   with DiagnosticReport.contained[SomaticNGSReportProfile.Results]
+   with DiagnosticReport.contained[SomaticNGSReportProfile.Results]
+/*
    with DiagnosticReport.contained[
      Product5[
-       List[ObsTumorCellContentProfile],
+       ObsTumorCellContentProfile,
        ObsTMBProfile,
        ObsMSIProfile,
        ObsBRCAnessProfile,
        List[SimpleVariantProfile]
      ]
    ]
+*/
 
-
-/*
 object SomaticNGSReportProfile
 {
-  trait Results
+  trait Results extends Product
   {
-    this: Product =>
+//    this: Product =>
 
-    val tumorContent:   List[ObsTumorCellContentProfile]
+    val tumorContent:   ObsTumorCellContentProfile
     val tmb:            ObsTMBProfile
-    val msi:            ObsMSIProfile
-    val brcaness:       ObsBRCAnessProfile
+    val msi:            Option[ObsMSIProfile]
+    val brcaness:       Option[ObsBRCAnessProfile]
     val simpleVariants: List[SimpleVariantProfile]
   }
 }
-*/
+
 
 
 
@@ -214,14 +212,16 @@ final case class SomaticNGSReport
   subject: LogicalReference[MTBPatient],
   specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
   result: NonEmptyList[LiteralReference[Observation]],
+  contained: SomaticNGSReport.Results
+/*
   contained: (
-    List[ObsTumorCellContent],
+    ObsTumorCellContent,
     ObsTMB,
     ObsMSI,
     ObsBRCAness,
     List[SimpleVariant]
   )
-
+*/
 )
 extends SomaticNGSReportProfile
 
@@ -232,9 +232,23 @@ object SomaticNGSReport
   implicit val profile =
    Meta.Profiles[SomaticNGSReport]("http://bwhc.de/mtb/somatic-ngs-report")
 
-//  implicit val code = LOINC.Code[SomaticNGSReport]("TODO: LOINC NGS Report",Some("Somatic NGS Report"))
   implicit val code =
     Code[SomaticNGSReport](LOINC("TODO: LOINC NGS Report",Some("Somatic NGS Report")))
+
+
+  final case class Results
+  (
+    tumorContent:   ObsTumorCellContent,
+    tmb:            ObsTMB,
+    msi:            Option[ObsMSI],
+    brcaness:       Option[ObsBRCAness],
+    simpleVariants: List[SimpleVariant]
+  )
+  extends SomaticNGSReportProfile.Results
+
+
+  implicit val formatResults = Json.format[SomaticNGSReport.Results]
+
 
   import json.contained._
 

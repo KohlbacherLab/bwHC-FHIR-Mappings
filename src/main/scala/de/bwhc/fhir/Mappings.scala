@@ -557,7 +557,6 @@ object Mappings
     th =>
 
       val medication = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
-//      val medication = th.medication.mapTo[MTBMedication]
 
       PreviousGuidelineTherapy(
         NonEmptyList.one(th.id),
@@ -579,7 +578,6 @@ object Mappings
         th.reasonReference.head.identifier,
         th.extension.map { case Tuple1(l) => dtos.TherapyLine(l.value) },
         Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]])
-//        th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]]
       )
 
   }
@@ -593,7 +591,6 @@ object Mappings
       import LastGuidelineTherapy._
 
       val med = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
-//      val med = th.medication.mapTo[MTBMedication]
 
       LastGuidelineTherapy(
         NonEmptyList.one(th.id),
@@ -620,11 +617,10 @@ object Mappings
       dtos.LastGuidelineTherapy(
         th.identifier.head,
         th.subject.identifier,
-      th.reasonReference.head.identifier,
+        th.reasonReference.head.identifier,
         th.extension.map { case Tuple1(ext) => dtos.TherapyLine(ext.value.value) },
         th.period.map(_.mapTo[dtos.OpenEndPeriod[LocalDate]]),
         Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
-//        th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
         th.statusReason.flatMap(_.headOption)
           .map(cc =>
             dtos.Coding[StopReason.Value](
@@ -692,11 +688,170 @@ object Mappings
 
   }
 
-/*
   //---------------------------------------------------------------------------
   // Somatic NGS Report mappings
   //---------------------------------------------------------------------------
 
+  import java.util.UUID.{randomUUID => rndID}
+
+  implicit def tumorCellContentToFHIR(
+    implicit subject: LogicalReference[MTBPatient]
+  ): dtos.TumorCellContent => ObsTumorCellContent = {
+    tc =>
+
+      import ObsTumorCellContent._
+
+      ObsTumorCellContent(
+        tc.id.value,
+        Observation.Status.Final,
+        subject,
+        Reference[TumorSpecimen](tc.specimen),
+        BasicCodeableConcept(BasicCoding[dtos.TumorCellContent.Method.Value](tc.method.toString,None)),
+        SimpleQuantity(tc.value)
+      )
+  }
+
+
+  implicit def brcanessToFHIR(
+    implicit
+    subject: LogicalReference[MTBPatient],
+    specimen: LogicalReference[TumorSpecimen]
+  ): dtos.SomaticNGSReport.BRCAness => ObsBRCAness = {
+    brca =>
+
+      import ObsBRCAness._
+
+      ObsBRCAness(
+        rndID.toString,
+        Observation.Status.Final,
+        subject,
+        specimen,
+        SimpleQuantity(brca.value)
+      )
+  }
+
+
+  implicit def tmbToFHIR(
+    implicit
+    subject: LogicalReference[MTBPatient],
+    specimen: LogicalReference[TumorSpecimen]
+  ): dtos.SomaticNGSReport.TMB => ObsTMB = {
+    tmb =>
+
+      import ObsTMB._
+
+      ObsTMB(
+        rndID.toString,
+        Observation.Status.Final,
+        subject,
+        specimen,
+        SimpleQuantity(tmb.value,Some("mut/Mb"))
+      )
+  }
+
+
+  implicit def msiToFHIR(
+    implicit
+    subject: LogicalReference[MTBPatient],
+    specimen: LogicalReference[TumorSpecimen]
+  ): dtos.SomaticNGSReport.MSI => ObsMSI = {
+    msi =>
+
+      import ObsMSI._
+
+      ObsMSI(
+        rndID.toString,
+        Observation.Status.Final,
+        subject,
+        specimen,
+        SimpleQuantity(msi.value)
+      )
+  }
+
+
+
+
+
+  implicit def cosmicIdFromIdentifier(id: Identifier) =
+    dtos.Variant.CosmicId(id.value)
+
+  implicit def cosmicIdToIdentifier(id: dtos.Variant.CosmicId) =
+    Identifier(id.value)
+
+
+  implicit def simpleVariantToFHIR(
+    implicit subject: LogicalReference[MTBPatient]
+  ): dtos.SimpleVariant => SimpleVariant = {
+
+    snv =>
+
+    import ObsVariant._
+    import SimpleVariant._
+      
+      SimpleVariant(
+        snv.id.value,
+        snv.cosmicId.map(_.mapTo[Identifier]).map(List(_)),
+        Observation.Status.Final,
+        subject,
+        SimpleVariant.Components(
+          Chromosome(snv.chromosome.value),
+          NonEmptyList.one(GeneStudied(BasicCodeableConcept(BasicCoding[HGNC](snv.gene.code.value,None)))),
+          ExactStartEnd(LBoundedRange(snv.startEnd.start.toDouble,snv.startEnd.end.map(_.toDouble))),
+          RefAllele(snv.refAllele.value),
+          AltAllele(snv.altAllele.value),
+          DNAChange(BasicCodeableConcept(BasicCoding[HGVS](snv.dnaChange.code.value,None))),
+          AminoAcidChange(BasicCodeableConcept(BasicCoding[HGVS](snv.aminoAcidChange.code.value,None))),
+          snv.dbSNPId.map(v => DbSNPId(BasicCodeableConcept(BasicCoding[dbSNP](v.value,None)))),
+          SampleAllelicFrequency(SimpleQuantity(snv.allelicFrequency.value)),
+          AllelicReadDepth(SimpleQuantity(snv.readDepth.value))
+        ),
+        NonEmptyList.one(
+          BasicCodeableConcept(BasicCoding[ClinVar](snv.interpretation.code.value,None)),
+        )
+      )
+  }  
+
+
+  implicit val ngsReportToFHIR: dtos.SomaticNGSReport => SomaticNGSReport = {
+
+    ngsReport =>
+
+      implicit val subject  = LogicalReference[MTBPatient](ngsReport.patient)
+      implicit val specimen = LogicalReference[TumorSpecimen](ngsReport.specimen)
+
+      val tcc      = ngsReport.tumorCellContent.mapTo[ObsTumorCellContent]
+      val tmb      = ngsReport.tmb.mapTo[ObsTMB]
+      val msi      = ngsReport.msi.map(_.mapTo[ObsMSI])
+      val brcaness = ngsReport.brcaness.map(_.mapTo[ObsBRCAness])
+      val snvs     = ngsReport.simpleVariants.getOrElse(List.empty).map(_.mapTo[SimpleVariant])
+
+      SomaticNGSReport(
+        NonEmptyList.one(Identifier(ngsReport.id.value)),
+        ngsReport.issueDate,
+        DiagnosticReport.Status.Final,
+        subject,
+        NonEmptyList.one(specimen),
+        NonEmptyList.of(
+          Reference.contained(tcc),
+          Reference.contained(tmb),
+        ) ++
+          msi.map(Reference.contained(_)).toList ++
+          brcaness.map(Reference.contained(_)).toList ++
+          snvs.map(Reference.contained(_)),
+        SomaticNGSReport.Results(
+          tcc,
+          tmb,
+          msi,
+          brcaness,
+          snvs          
+        )
+      )
+
+  }
+
+
+
+/*
   import java.util.UUID.{randomUUID => rndID}
 
   def toFHIR(
@@ -913,7 +1068,6 @@ object Mappings
         import LoE._
 
         val med = rec.medication.getOrElse(List.empty).mapTo[MTBMedication]
-//        val med = rec.medication.mapTo[MTBMedication]
 
         TherapyRecommendation(
           NonEmptyList.one(rec.id),
@@ -951,7 +1105,6 @@ object Mappings
           rec.reasonReference.head.identifier,
           rec.authoredOn,
           Some(rec.contained._1.mapTo[List[dtos.Coding[ATC]]]),
-//          rec.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
           rec.priority.map(_.mapTo[dtos.TherapyRecommendation.Priority.Value]),
           rec.extension.map { case Tuple1(loe) =>
             dtos.LevelOfEvidence(
@@ -990,7 +1143,7 @@ object Mappings
         Reference[MTBPatient](cp.patient.mapTo[Identifier]),
         NonEmptyList.one(Reference[Diagnosis](cp.diagnosis.mapTo[Identifier])),
         cp.description,
-        cp.recommendations.getOrElse(List.empty)//.map(_.identifier.head)
+        cp.recommendations.getOrElse(List.empty)
            .map(LogicalReference[TherapyRecommendation](_))
            .map(MTBCarePlan.Activity)
       )
@@ -1064,7 +1217,6 @@ object Mappings
         case th: dtos.StoppedTherapy => {
 
           val medication = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
-//          val medication = th.medication.mapTo[MTBMedication]
 
           StoppedMolecularTherapy(
             identifier,
@@ -1085,7 +1237,6 @@ object Mappings
         case th: dtos.CompletedTherapy => {
 
           val medication = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
-//          val medication = th.medication.mapTo[MTBMedication]
 
           CompletedMolecularTherapy(
             identifier,
@@ -1103,7 +1254,6 @@ object Mappings
         case th: dtos.OngoingTherapy => {
 
           val medication = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
-//          val medication = th.medication.mapTo[MTBMedication]
 
           ActiveMolecularTherapy(
             identifier,
@@ -1163,7 +1313,6 @@ object Mappings
             th.basedOn.head.identifier,
             dtos.ClosedPeriod(th.effectivePeriod.start,th.effectivePeriod.end),
             Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
-//            th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
             th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
             dtos.Coding(StopReason.withName(th.statusReason.head.coding.head.code),None),
             note
@@ -1178,7 +1327,6 @@ object Mappings
             th.basedOn.head.identifier,
             dtos.ClosedPeriod(th.effectivePeriod.start,th.effectivePeriod.end),
             Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
-//            th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
             th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
             note
           )
@@ -1192,7 +1340,6 @@ object Mappings
             th.basedOn.head.identifier,
             dtos.OpenEndPeriod(th.effectivePeriod.start),
             Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
-//            th.contained._1.mapTo[NonEmptyList[dtos.Coding[ATC]]],
             th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
             note
           )
