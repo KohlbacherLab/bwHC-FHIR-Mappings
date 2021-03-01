@@ -16,7 +16,6 @@ import cats.data.NonEmptyList
 
 trait MTBFileBundleProfile
 extends Bundle.Collection
-//   with Bundle.identifier[Required]
    with Bundle.entry[MTBFileEntriesProfile]
   
 
@@ -35,7 +34,7 @@ extends Bundle.EntrySet
   val ecogs:                  List[EntryElement with Entry.resource[ObsECOGProfile]]
   val specimens:              List[EntryElement with Entry.resource[TumorSpecimenProfile]]
 //  val histology:              List[EntryElement with Entry.resource[ObsHistologyProfile]]
-//  val ngsReports:             List[EntryElement with Entry.resource[SomaticNGSReportProfile]]
+  val ngsReports:             List[EntryElement with Entry.resource[SomaticNGSReportProfile]]
   val carePlans:              List[EntryElement with Entry.resource[MTBCarePlanProfile]]
   val therapyRecommendations: List[EntryElement with Entry.resource[TherapyRecommendationProfile]]
   val molecularTherapies:     List[EntryElement with Entry.resource[MolecularTherapyHistoryProfile]]
@@ -46,7 +45,6 @@ extends Bundle.EntrySet
 
 case class MTBFileBundle
 (
-//  identifier: Identifier,
   entry: MTBFileEntries
 )
 extends MTBFileBundleProfile
@@ -63,7 +61,7 @@ final case class MTBFileEntries
   ecogs:                  List[EntryOf[ObsECOG]],
   specimens:              List[EntryOf[TumorSpecimen]],
 //  histology:              List[EntryOf[ObsHistology]],
-//  ngsReports:             List[EntryOf[SomaticNGSReport]],
+  ngsReports:             List[EntryOf[SomaticNGSReport]],
   carePlans:              List[EntryOf[MTBCarePlan]],
   therapyRecommendations: List[EntryOf[TherapyRecommendation]],
   molecularTherapies:     List[EntryOf[MolecularTherapyHistory]],
@@ -80,7 +78,7 @@ object MTBFileBundle
   import org.hl7.fhir.r4.json.backboneElements._
 
   implicit val mtbFileBundleProfile =
-    Meta.Profiles[MTBFileBundle]("http://bwhc-mtb-file")
+    Meta.Profiles[MTBFileBundle]("http://bwhc.de/mtb-file")
     
   implicit val formatMTBFileBundle =
     Json.format[MTBFileBundle]

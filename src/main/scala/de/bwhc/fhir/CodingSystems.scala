@@ -45,4 +45,8 @@ object CodingSystems
     System[RECIST.Value]("RECIST")
 
 
+  implicit val system =
+    System[SomaticNGSReport.SequencingType]("http://bwhc.de/mtb/somatic-ngs-report/sequencing-type")
+
+
 }

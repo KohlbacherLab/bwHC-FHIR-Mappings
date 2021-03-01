@@ -14,6 +14,7 @@ import org.hl7.fhir.r4.json._
 import play.api.libs.json.Json
 
 import de.bwhc.mtb.data.entry.dtos.TumorCellContent
+import de.bwhc.mtb.data.entry.dtos.SomaticNGSReport.SequencingType
 
 
 //-----------------------------------------------------------------------------
@@ -166,33 +167,37 @@ object ObsBRCAness
 // NGSReport Profile
 //-----------------------------------------------------------------------------
 
+final case class ExtSequencingType(
+  value: BasicCoding[SequencingType]
+) extends SimpleExtension[BasicCoding[SequencingType]]
+
+object ExtSequencingType
+{
+  import CodingSystems._
+
+  implicit val url    =
+    Extension.Url[ExtSequencingType]("http://bwhc.de/mtb/somatic-ngs-report/sequencing-type")
+
+  implicit val format =
+    json.extensions.format(ExtSequencingType(_))
+}
+
+
 trait SomaticNGSReportProfile
 extends DiagnosticReport
    with DiagnosticReport.identifierNel
    with DiagnosticReport.subject[Patient,Required]
    with DiagnosticReport.specimenNel[TumorSpecimenProfile]
    with DiagnosticReport.issued[LocalDate,Required]
+   with DiagnosticReport.extensions[Product1[ExtSequencingType],Required]
 //TODO: sequencing type, metadata
    with DiagnosticReport.resultNel[Observation]
    with DiagnosticReport.contained[SomaticNGSReportProfile.Results]
-/*
-   with DiagnosticReport.contained[
-     Product5[
-       ObsTumorCellContentProfile,
-       ObsTMBProfile,
-       ObsMSIProfile,
-       ObsBRCAnessProfile,
-       List[SimpleVariantProfile]
-     ]
-   ]
-*/
 
 object SomaticNGSReportProfile
 {
   trait Results extends Product
   {
-//    this: Product =>
-
     val tumorContent:   ObsTumorCellContentProfile
     val tmb:            ObsTMBProfile
     val msi:            Option[ObsMSIProfile]
@@ -209,19 +214,11 @@ final case class SomaticNGSReport
   identifier: NonEmptyList[Identifier],
   issued: LocalDate,
   status: DiagnosticReport.Status.Value,
+  extension: Tuple1[ExtSequencingType],
   subject: LogicalReference[MTBPatient],
   specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
   result: NonEmptyList[LiteralReference[Observation]],
   contained: SomaticNGSReport.Results
-/*
-  contained: (
-    ObsTumorCellContent,
-    ObsTMB,
-    ObsMSI,
-    ObsBRCAness,
-    List[SimpleVariant]
-  )
-*/
 )
 extends SomaticNGSReportProfile
 
@@ -247,13 +244,8 @@ object SomaticNGSReport
   extends SomaticNGSReportProfile.Results
 
 
-  implicit val formatResults = Json.format[SomaticNGSReport.Results]
-
-
   import json.contained._
 
   implicit val format = Json.format[SomaticNGSReport]
 
 }
-
-

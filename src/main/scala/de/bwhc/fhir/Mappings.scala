@@ -829,6 +829,9 @@ object Mappings
         NonEmptyList.one(Identifier(ngsReport.id.value)),
         ngsReport.issueDate,
         DiagnosticReport.Status.Final,
+        Tuple1(
+          ExtSequencingType(BasicCoding[dtos.SomaticNGSReport.SequencingType](ngsReport.sequencingType.value))
+        ),
         subject,
         NonEmptyList.one(specimen),
         NonEmptyList.of(
@@ -848,192 +851,6 @@ object Mappings
       )
 
   }
-
-
-
-/*
-  import java.util.UUID.{randomUUID => rndID}
-
-  def toFHIR(
-    variant: dtos.SimpleVariant
-  )(
-    implicit subject: Reference[MTBPatient]
-  ): SimpleVariant = {
-
-    import ObsVariant._
-    import SimpleVariant._
-      
-      SimpleVariant(
-        rndID.toString,
-        NonEmptyList.one(variant.cosmicId.mapTo[Identifier]),
-        Observation.Status.Final,
-        subject,
-        SimpleVariant.Components(
-          NonEmptyList.one(GeneStudied(BasicCodeableConcept(BasicCoding[HGNC](variant.gene.value,None)))),
-//          ExactStartEnd(LBoundedRange(variant.startEnd.start.toDouble,Some(variant.startEnd.end.toDouble))),
-          ExactStartEnd(variant.startEnd.toString),
-          RefAllele(variant.refAllele.value),
-          AltAllele(variant.altAllele.value),
-          AminoAcidChange(BasicCodeableConcept(BasicCoding[HGVS](variant.aminoAcidChange.value,None))),
-          DNAChange(BasicCodeableConcept(BasicCoding[HGVS](variant.dnaChange.value,None))),
-          DbSNPId(BasicCodeableConcept(BasicCoding[dbSNP](variant.dbSNPId.value,None))),
-          SampleAllelicFrequency(SimpleQuantity(variant.allelicFrequency.value)),
-          AllelicReadDepth(SimpleQuantity(variant.readDepth.value))
-        ),
-        NonEmptyList.one(
-          BasicCodeableConcept(BasicCoding[ClinVar](variant.interpretation.value,None)),
-        )
-      )
-  }  
-
-
-  implicit val variantFromFHIR: SimpleVariant => dtos.SimpleVariant = {
-    variant =>
-
-      import de.bwhc.catalogs.hgnc.HGNCGene
-      import dtos.Variant._
-      import dtos.SimpleVariant._
-
-      val SimpleVariant.Components(
-        geneStudied,
-        exactStartEnd,
-        refAllele,
-        altAllele,
-        aminoAcidChange,
-        dnaChange,
-        dbSNPId,
-        sampleAllelicFrequency,
-        allelicReadDepth
-      ) = variant.component
-
-
-      dtos.SimpleVariant(
-        HGNCGene.Symbol(geneStudied.head.valueCodeableConcept.coding.head.code),
-        StartEnd.parse(exactStartEnd.valueString),
-        Allele(refAllele.valueString),
-        Allele(altAllele.valueString),
-        DNAChange(aminoAcidChange.valueCodeableConcept.coding.head.code),
-        AminoAcidChange(aminoAcidChange.valueCodeableConcept.coding.head.code),
-        AllelicReadDepth(allelicReadDepth.valueQuantity.value.toInt),
-        AllelicFrequency(sampleAllelicFrequency.valueQuantity.value),
-        CosmicId(variant.identifier.head.value),
-        DbSNPId(dbSNPId.valueCodeableConcept.coding.head.code),
-        Interpretation(variant.interpretation.head.coding.head.code)
-      )
-  }
-
-  def toFHIR(
-    tc: dtos.TumorCellContent
-  )(
-    implicit
-    subject: Reference[MTBPatient],
-    specimen: Reference[TumorSpecimen]
-  ): ObsTumorCellContent = {
-
-      import ObsTumorCellContent._
-
-      ObsTumorCellContent(
-        rndID.toString,
-        Observation.Status.Final,
-        subject,
-        specimen,
-        BasicCodeableConcept(BasicCoding(tc.method, None)),
-        SimpleQuantity(tc.value)          
-      )
-  }
-
-  implicit val tumorContentFromFHIR: ObsTumorCellContent => dtos.TumorCellContent = {
-    tc =>
-      dtos.TumorCellContent(
-        dtos.TumorCellContent.Method.withName(tc.method.coding.head.code),
-        tc.specimen.identifier.map(_.value).map(dtos.Specimen.Id).get,
-        tc.valueQuantity.value
-      ) 
-  }
-
-  implicit val ngsReportToFHIR: dtos.SomaticNGSReport => SomaticNGSReport = {
-    ngs =>
-  
-      implicit val subject  = Reference[MTBPatient](ngs.patient.mapTo[Identifier])
-      implicit val specimen = Reference[TumorSpecimen](ngs.specimen.mapTo[Identifier])
-
-      val tumorContent =
-        ngs.tumorContent.map(toFHIR)
-
-      val tmb =
-        ObsTMB(
-          rndID.toString,
-          Observation.Status.Final,
-          subject,
-          specimen,
-          SimpleQuantity(ngs.tmb.value,Some("mut/Mb"))          
-        )
-
-      val msi =
-        ObsMSI(
-          rndID.toString,
-          Observation.Status.Final,
-          subject,
-          specimen,
-          SimpleQuantity(ngs.msi.value)          
-        )
-
-      val brcaness =
-        ObsBRCAness(
-          rndID.toString,
-          Observation.Status.Final,
-          subject,
-          specimen,
-          SimpleQuantity(ngs.brcaness.value)          
-        )
-
-      val simpleVariants = ngs.simpleVariants.map(toFHIR(_)).toList
-
-      SomaticNGSReport(
-        NonEmptyList.one(ngs.id.mapTo[Identifier]),
-        ngs.issueDate,
-        DiagnosticReport.Status.Final,
-        subject,
-        NonEmptyList.one(specimen),
-        NonEmptyList.of(
-          Reference.contained(tmb),
-          Reference.contained(msi),
-          Reference.contained(brcaness)
-        ) ++ tumorContent.map(Reference.contained(_))
-          ++ simpleVariants.map(Reference.contained(_)),
-        (
-          tumorContent,
-          tmb,
-          msi,
-          brcaness,
-          simpleVariants
-        )
-      )
-
-  }
-
-  implicit val ngsReportFromFHIR: SomaticNGSReport => dtos.SomaticNGSReport = {
-    ngs =>
-
-      import dtos.SomaticNGSReport._
-
-      val (tumorContent,tmb,msi,brcaness,simpleVariants) = ngs.contained
-
-      dtos.SomaticNGSReport(  
-        Id(ngs.identifier.head.value),
-        ngs.subject.identifier.map(_.value).map(dtos.Patient.Id).get,
-        ngs.specimen.head.identifier.map(_.value).map(dtos.Specimen.Id).get,
-        ngs.issued,
-//        ???,  //TODO TODO
-        tumorContent.map(_.mapTo[dtos.TumorCellContent]),
-        BRCAness(brcaness.valueQuantity.value),
-        MSI(msi.valueQuantity.value),
-        TMB(tmb.valueQuantity.value),
-//        ???,  //TODO TODO
-        simpleVariants.map(_.mapTo[SimpleVariant])
-      )
-  }
-*/
 
 
   //---------------------------------------------------------------------------
@@ -1416,7 +1233,7 @@ object Mappings
           mtbfile.ecogStatus.getOrElse(List.empty).map(_.mapTo[ObsECOG]).map(EntryOf(_)),
           mtbfile.specimens.getOrElse(List.empty).map(_.mapTo[TumorSpecimen]).map(EntryOf(_)),
 //          mtbfile.histologyReports.map(_.mapTo[ObsHistology]).map(EntryOf(_)),
-//          mtbfile.ngsReports.map(_.mapTo[SomaticNGSReport]).map(EntryOf(_)),
+          mtbfile.ngsReports.getOrElse(List.empty).map(_.mapTo[SomaticNGSReport]).map(EntryOf(_)),
           mtbfile.carePlans.getOrElse(List.empty).map(_.mapTo[MTBCarePlan]).map(EntryOf(_)),
           mtbfile.recommendations.getOrElse(List.empty).map(_.mapTo[TherapyRecommendation]).map(EntryOf(_)),
           mtbfile.molecularTherapies.getOrElse(List.empty).map(_.mapTo[MolecularTherapyHistory]).map(EntryOf(_)),
@@ -1468,7 +1285,6 @@ case class MTBFile
         bundle.entry.episode.mapTo[dtos.MTBEpisode],
         Some(bundle.entry.diagnoses.map(_.mapTo[dtos.Diagnosis])).filterNot(_.isEmpty),
         Some(bundle.entry.familyMemberDiagnoses.map(_.mapTo[dtos.FamilyMemberDiagnosis])).filterNot(_.isEmpty),
-//    None, //TODO
         Some(bundle.entry.previousGLTherapies.map(_.mapTo[dtos.PreviousGuidelineTherapy])),
         bundle.entry.lastGLTherapy.map(_.mapTo[dtos.LastGuidelineTherapy]),
         Some(bundle.entry.ecogs.map(_.mapTo[dtos.ECOGStatus])),
