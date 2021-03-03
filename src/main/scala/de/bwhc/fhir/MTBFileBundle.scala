@@ -33,10 +33,17 @@ extends Bundle.EntrySet
   val lastGLTherapy:          Option[EntryElement with Entry.resource[LastGuidelineTherapyProfile]]
   val ecogs:                  List[EntryElement with Entry.resource[ObsECOGProfile]]
   val specimens:              List[EntryElement with Entry.resource[TumorSpecimenProfile]]
-//  val histology:              List[EntryElement with Entry.resource[ObsHistologyProfile]]
+  val histology:              List[EntryElement with Entry.resource[HistologyReportProfile]]
   val ngsReports:             List[EntryElement with Entry.resource[SomaticNGSReportProfile]]
   val carePlans:              List[EntryElement with Entry.resource[MTBCarePlanProfile]]
   val therapyRecommendations: List[EntryElement with Entry.resource[TherapyRecommendationProfile]]
+/*
+ TODO:
+  StudyInclusionRequests,
+  RebiopsyRequests,
+  HistologyReevaluationRequests,
+  CounsellingRequests
+*/
   val molecularTherapies:     List[EntryElement with Entry.resource[MolecularTherapyHistoryProfile]]
   val responses:              List[EntryElement with Entry.resource[ObsRECISTProfile]]
 }
@@ -60,7 +67,7 @@ final case class MTBFileEntries
   lastGLTherapy:          Option[EntryOf[LastGuidelineTherapy]],
   ecogs:                  List[EntryOf[ObsECOG]],
   specimens:              List[EntryOf[TumorSpecimen]],
-//  histology:              List[EntryOf[ObsHistology]],
+  histology:              List[EntryOf[HistologyReport]],
   ngsReports:             List[EntryOf[SomaticNGSReport]],
   carePlans:              List[EntryOf[MTBCarePlan]],
   therapyRecommendations: List[EntryOf[TherapyRecommendation]],

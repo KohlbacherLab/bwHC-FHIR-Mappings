@@ -26,6 +26,7 @@ extends Extension
 object LoE
 {
 
+  import json._
   import json.extensions._
 
   implicit val loeGrading =

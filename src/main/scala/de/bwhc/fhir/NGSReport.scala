@@ -5,6 +5,7 @@ import java.time.LocalDate
 
 import cats.data.NonEmptyList
 
+
 import org.hl7.fhir.r4
 import org.hl7.fhir.r4._
 import org.hl7.fhir.r4.Observation._
@@ -183,14 +184,75 @@ object ExtSequencingType
 }
 
 
+final case class ExtMetaData
+(
+  kitType: ExtMetaData.KitType,
+  kitManufacturer: ExtMetaData.KitManufacturer,
+  sequencer: ExtMetaData.Sequencer,
+  refGenome: ExtMetaData.RefGenome,
+  pipeline: Option[ExtMetaData.Pipeline]
+)
+extends Extension
+
+object ExtMetaData
+{
+
+  import java.net.URI
+
+  final case class KitType(value: String) extends SimpleExtension[String]
+  final case class KitManufacturer(value: String) extends SimpleExtension[String]
+  final case class Sequencer(value: String) extends SimpleExtension[String]
+  final case class RefGenome(value: String) extends SimpleExtension[String]
+  final case class Pipeline(value: URI) extends SimpleExtension[URI]
+
+
+  implicit val urlKitType = Extension.Url[KitType]("http://bwhc.de/mtb/somatic-ngs-report/metadata/kitType")
+  implicit val formatKitType = json.extensions.format(KitType(_))
+
+
+  implicit val urlKitManufacturer = Extension.Url[KitManufacturer]("http://bwhc.de/mtb/somatic-ngs-report/metadata/kitManufacturer")
+  implicit val formatKitManufacture = json.extensions.format(KitManufacturer(_))
+
+
+  implicit val urlSequencer = Extension.Url[Sequencer]("http://bwhc.de/mtb/somatic-ngs-report/metadata/sequencer")
+  implicit val formatSequencer = json.extensions.format(Sequencer(_))
+
+
+  implicit val urlRefGenome = Extension.Url[RefGenome]("http://bwhc.de/mtb/somatic-ngs-report/metadata/refGenome")
+  implicit val formatRefGenome = json.extensions.format(RefGenome(_))
+
+
+  implicit val urlPipeline = Extension.Url[Pipeline]("http://bwhc.de/mtb/somatic-ngs-report/metadata/pipeline")
+  implicit val formatPipeline = json.extensions.format(Pipeline(_))
+
+
+  implicit val url = Extension.Url[ExtMetaData]("http://bwhc.de/mtb/somatic-ngs-report/metadata")
+
+  import json.extensions._
+
+  implicit val format = json.extensions.format[ExtMetaData]
+
+}
+
+
 trait SomaticNGSReportProfile
 extends DiagnosticReport
    with DiagnosticReport.identifierNel
    with DiagnosticReport.subject[Patient,Required]
    with DiagnosticReport.specimenNel[TumorSpecimenProfile]
    with DiagnosticReport.issued[LocalDate,Required]
-   with DiagnosticReport.extensions[Product1[ExtSequencingType],Required]
 //TODO: sequencing type, metadata
+//   with DiagnosticReport.extensions[Product1[ExtSequencingType],Required]
+   with DiagnosticReport.extension[ExtMetaData,Required]
+/*
+   with DiagnosticReport.extensions[
+     Product2[
+       ExtSequencingType,
+       List[ExtMetaData]
+     ],
+     Required
+   ]
+*/
    with DiagnosticReport.resultNel[Observation]
    with DiagnosticReport.contained[SomaticNGSReportProfile.Results]
 
@@ -214,7 +276,9 @@ final case class SomaticNGSReport
   identifier: NonEmptyList[Identifier],
   issued: LocalDate,
   status: DiagnosticReport.Status.Value,
-  extension: Tuple1[ExtSequencingType],
+//  extension: Tuple1[ExtSequencingType],
+  extension: List[ExtMetaData],
+//  extension: (ExtSequencingType,List[ExtMetaData]),
   subject: LogicalReference[MTBPatient],
   specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
   result: NonEmptyList[LiteralReference[Observation]],
@@ -230,7 +294,7 @@ object SomaticNGSReport
    Meta.Profiles[SomaticNGSReport]("http://bwhc.de/mtb/somatic-ngs-report")
 
   implicit val code =
-    Code[SomaticNGSReport](LOINC("TODO: LOINC NGS Report",Some("Somatic NGS Report")))
+    Code[SomaticNGSReport](LOINC("TODO: LOINC Code NGS Report",Some("Somatic NGS Report")))
 
 
   final case class Results
@@ -245,6 +309,8 @@ object SomaticNGSReport
 
 
   import json.contained._
+//  import json.extensions._
+
 
   implicit val format = Json.format[SomaticNGSReport]
 

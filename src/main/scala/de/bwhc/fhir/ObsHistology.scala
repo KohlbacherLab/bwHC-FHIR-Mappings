@@ -40,7 +40,6 @@ object ObsHistologyProfile
 {
 
   implicit def code[O <: ObsHistology] = Code[O](LOINC("59847-4"))
-//  implicit def code[O <: ObsHistology] = LOINC.Code[O]("59847-4")
 
 }
 
@@ -53,8 +52,6 @@ final case class ObsHistology
   effectiveDateTime: Option[LocalDate],
   subject: LogicalReference[MTBPatient],
   specimen: LogicalReference[Specimen],
-//  subject: Reference[MTBPatient],
-//  specimen: Reference[Specimen],
   valueCodeableConcept: Option[BasicCodeableConcept[ICDO3M]],
   note: Option[List[Protocol]]
 )

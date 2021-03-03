@@ -4,6 +4,7 @@ package de.bwhc.fhir
 
 import java.time.temporal.Temporal
 import java.time.LocalDate
+import java.util.UUID.{randomUUID => rndID}
 
 import cats.data.NonEmptyList
 
@@ -227,6 +228,7 @@ object Mappings
 
   implicit def diagIdFromIdentifier(id: Identifier) = dtos.Diagnosis.Id(id.value)
 
+
   implicit def histologyIdToIdentifier(id: dtos.HistologyReport.Id): Identifier =
     Identifier(id.value)
 
@@ -375,58 +377,7 @@ object Mappings
             None
           )
         )
-/*
 
-  //---------------------------------------------------------------------------
-  // Histology mappings
-  //---------------------------------------------------------------------------
-
-  implicit def specimenIdToIdentifier(id: dtos.Specimen.Id) =
-    Identifier(id.value)
-
-  implicit def specimenIdFromIdentifier(id: Identifier) =
-    dtos.Specimen.Id(id.value)
-
-  implicit val histologyResultToFHIR: dtos.HistologyReport => ObsHistology =
-    histo =>
-      ObsHistology(
-        NonEmptyList.one(histo.id),
-        Observation.Status.Final,
-        histo.issuedOn,
-        Reference[MTBPatient](histo.patient),
-        Reference[Specimen](histo.specimen),
-        histo.icdO3M.map(icdO3M =>
-          BasicCodeableConcept(
-            BasicCoding[dtos.ICDO3M](
-              icdO3M.code.value,
-              icdO3M.display,
-              icdO3M.version
-            )
-          )
-        ),
-        histo.note.map(Protocol(_)).map(List(_))
-      )
-
-
-  implicit val histologyReportFromFHIR: ObsHistology => dtos.HistologyReport =
-    obs =>
-      dtos.HistologyReport(
-        obs.identifier.head,
-        obs.subject.identifier,
-        obs.specimen.identifier,
-        obs.effectiveDateTime,
-        obs.valueCodeableConcept
-          .map(_.coding.head)
-          .map(coding =>
-            dtos.Coding( 
-              dtos.ICDO3M(coding.code),
-              coding.display,
-              coding.version
-            )
-          ),
-        obs.note.flatMap(_.headOption).map(_.text)
-      )
-*/
 
 
   //---------------------------------------------------------------------------
@@ -688,11 +639,11 @@ object Mappings
 
   }
 
-  //---------------------------------------------------------------------------
-  // Somatic NGS Report mappings
-  //---------------------------------------------------------------------------
 
-  import java.util.UUID.{randomUUID => rndID}
+
+  //---------------------------------------------------------------------------
+  // Tumor Cell Comntent
+  //---------------------------------------------------------------------------
 
   implicit def tumorCellContentToFHIR(
     implicit subject: LogicalReference[MTBPatient]
@@ -710,6 +661,64 @@ object Mappings
         SimpleQuantity(tc.value)
       )
   }
+
+
+  //---------------------------------------------------------------------------
+  // Histology mappings
+  //---------------------------------------------------------------------------
+
+
+  implicit def tumorMorphologyIdFromIdentifier(id: Identifier) =
+    dtos.TumorMorphology.Id(id.value)
+
+  implicit def tumorMorphologyIdToIdentifier(id: dtos.TumorMorphology.Id) =
+    Identifier(id.value)
+
+  implicit val tumorMorphologyToFHIR: dtos.TumorMorphology => ObsTumorMorphology = {
+    tm =>
+      ObsTumorMorphology(
+        rndID.toString,
+        Observation.Status.Final,
+        Reference[MTBPatient](tm.patient),
+        Reference[TumorSpecimen](tm.specimen),
+        BasicCodeableConcept(
+          BasicCoding(
+            tm.value.code.value,
+            tm.value.display,
+            tm.value.version
+          )
+        ),
+        tm.note.map(Note(_)).map(List(_))
+      )
+  }
+
+  implicit val histologyReportToFHIR: dtos.HistologyReport => HistologyReport = {
+    histoReport =>
+
+      implicit val subject = LogicalReference[MTBPatient](histoReport.patient)
+
+      val tumorContent = histoReport.tumorCellContent.map(_.mapTo[ObsTumorCellContent])
+      val morphology   = histoReport.tumorMorphology.map(_.mapTo[ObsTumorMorphology])
+
+      HistologyReport(
+        NonEmptyList.one(histoReport.id),
+        histoReport.issuedOn,
+        DiagnosticReport.Status.Final,
+        subject,
+        NonEmptyList.one(LogicalReference[TumorSpecimen](histoReport.specimen)),
+        tumorContent.map(Reference.contained(_)).toList ++
+          morphology.map(Reference.contained(_)),
+        (
+          morphology,
+          tumorContent
+        )
+      )
+  }
+
+
+  //---------------------------------------------------------------------------
+  // Somatic NGS Report mappings
+  //---------------------------------------------------------------------------
 
 
   implicit def brcanessToFHIR(
@@ -795,18 +804,34 @@ object Mappings
         subject,
         SimpleVariant.Components(
           Chromosome(snv.chromosome.value),
-          NonEmptyList.one(GeneStudied(BasicCodeableConcept(BasicCoding[HGNC](snv.gene.code.value,None)))),
-          ExactStartEnd(LBoundedRange(snv.startEnd.start.toDouble,snv.startEnd.end.map(_.toDouble))),
+          NonEmptyList.one(
+            GeneStudied(
+              BasicCodeableConcept(BasicCoding[HGNC](snv.gene.code.value,snv.gene.display))
+            )
+          ),
+          ExactStartEnd(
+            LBoundedRange(snv.startEnd.start.toDouble,snv.startEnd.end.map(_.toDouble))
+          ),
           RefAllele(snv.refAllele.value),
           AltAllele(snv.altAllele.value),
-          DNAChange(BasicCodeableConcept(BasicCoding[HGVS](snv.dnaChange.code.value,None))),
-          AminoAcidChange(BasicCodeableConcept(BasicCoding[HGVS](snv.aminoAcidChange.code.value,None))),
+          DNAChange(
+            BasicCodeableConcept(BasicCoding[HGVS](snv.dnaChange.code.value,None))
+          ),
+          AminoAcidChange(
+            BasicCodeableConcept(BasicCoding[HGVS](snv.aminoAcidChange.code.value,None))
+          ),
           snv.dbSNPId.map(v => DbSNPId(BasicCodeableConcept(BasicCoding[dbSNP](v.value,None)))),
-          SampleAllelicFrequency(SimpleQuantity(snv.allelicFrequency.value)),
-          AllelicReadDepth(SimpleQuantity(snv.readDepth.value))
+          SampleAllelicFrequency(
+            SimpleQuantity(snv.allelicFrequency.value)
+          ),
+          AllelicReadDepth(
+            SimpleQuantity(snv.readDepth.value)
+          )
         ),
         NonEmptyList.one(
-          BasicCodeableConcept(BasicCoding[ClinVar](snv.interpretation.code.value,None)),
+          BasicCodeableConcept(
+            BasicCoding[ClinVar](snv.interpretation.code.value,None)
+          ),
         )
       )
   }  
@@ -815,6 +840,9 @@ object Mappings
   implicit val ngsReportToFHIR: dtos.SomaticNGSReport => SomaticNGSReport = {
 
     ngsReport =>
+
+      import shapeless.{::,HNil}
+      import ExtMetaData._
 
       implicit val subject  = LogicalReference[MTBPatient](ngsReport.patient)
       implicit val specimen = LogicalReference[TumorSpecimen](ngsReport.specimen)
@@ -829,9 +857,31 @@ object Mappings
         NonEmptyList.one(Identifier(ngsReport.id.value)),
         ngsReport.issueDate,
         DiagnosticReport.Status.Final,
-        Tuple1(
-          ExtSequencingType(BasicCoding[dtos.SomaticNGSReport.SequencingType](ngsReport.sequencingType.value))
+        ngsReport.metadata.map {
+         case dtos.SomaticNGSReport.MetaData(kitType,manufacturer,seq,ref,pipeline) =>
+            ExtMetaData(
+              KitType(kitType),
+              KitManufacturer(manufacturer),
+              Sequencer(seq),
+              RefGenome(ref.value),
+              pipeline.map(Pipeline(_))
+            )
+        },
+/*
+        (
+          ExtSequencingType(BasicCoding[dtos.SomaticNGSReport.SequencingType](ngsReport.sequencingType.value)),
+          ngsReport.metadata.map {
+           case dtos.SomaticNGSReport.MetaData(kitType,manufacturer,seq,ref,pipeline) =>
+              ExtMetaData(
+                KitType(kitType),
+                KitManufacturer(manufacturer),
+                Sequencer(seq),
+                RefGenome(ref.value),
+                pipeline.map(Pipeline(_))
+              )
+          }
         ),
+*/
         subject,
         NonEmptyList.one(specimen),
         NonEmptyList.of(
@@ -1025,7 +1075,7 @@ object Mappings
             subject,
             Reference[MTBMedication]("DUMMY"),
             NonEmptyList.one(
-              BasicCodeableConcept(BasicCoding(th.notDoneReason.toString,None))
+              BasicCodeableConcept(BasicCoding(th.notDoneReason.code.toString,None))
             ),
             note
           )
@@ -1045,7 +1095,7 @@ object Mappings
             ClosedPeriod(th.period.start,th.period.end),
             th.dosage.map(_.mapTo[DosageDensity]).map(List(_)),
             NonEmptyList.one(
-              BasicCodeableConcept(BasicCoding(th.reasonStopped.toString,None))
+              BasicCodeableConcept(BasicCoding(th.reasonStopped.code.toString,None))
             ),
             note
           )
@@ -1232,7 +1282,7 @@ object Mappings
           mtbfile.lastGuidelineTherapy.map(_.mapTo[LastGuidelineTherapy]).map(EntryOf(_)),
           mtbfile.ecogStatus.getOrElse(List.empty).map(_.mapTo[ObsECOG]).map(EntryOf(_)),
           mtbfile.specimens.getOrElse(List.empty).map(_.mapTo[TumorSpecimen]).map(EntryOf(_)),
-//          mtbfile.histologyReports.map(_.mapTo[ObsHistology]).map(EntryOf(_)),
+          mtbfile.histologyReports.getOrElse(List.empty).map(_.mapTo[HistologyReport]).map(EntryOf(_)),
           mtbfile.ngsReports.getOrElse(List.empty).map(_.mapTo[SomaticNGSReport]).map(EntryOf(_)),
           mtbfile.carePlans.getOrElse(List.empty).map(_.mapTo[MTBCarePlan]).map(EntryOf(_)),
           mtbfile.recommendations.getOrElse(List.empty).map(_.mapTo[TherapyRecommendation]).map(EntryOf(_)),
@@ -1242,36 +1292,6 @@ object Mappings
       )
 
     }
-
-
-/*
-case class MTBFile
-(
-  patient: Patient,
-  consent: Consent,
-  episode: MTBEpisode,
-  diagnoses: Option[List[Diagnosis]],
-  familyMemberDiagnoses: Option[List[FamilyMemberDiagnosis]],
-  previousGuidelineTherapies: Option[List[PreviousGuidelineTherapy]],
-  lastGuidelineTherapy: Option[LastGuidelineTherapy],
-  ecogStatus: Option[List[ECOGStatus]],
-  specimens: Option[List[Specimen]],
-  molecularPathologyFindings: Option[List[MolecularPathologyFinding]],
-  histologyReports: Option[List[HistologyReport]],
-  ngsReports: Option[List[SomaticNGSReport]],
-  carePlans: Option[List[CarePlan]],
-  recommendations: Option[List[TherapyRecommendation]],
-  geneticCounsellingRequests: Option[List[GeneticCounsellingRequest]],
-  rebiopsyRequests: Option[List[RebiopsyRequest]],
-  histologyReevaluationRequests: Option[List[HistologyReevaluationRequest]],
-  studyInclusionRequests: Option[List[StudyInclusionRequest]],
-  claims: Option[List[Claim]],
-  claimResponses: Option[List[ClaimResponse]],
-  molecularTherapies: Option[List[MolecularTherapyDocumentation]],
-  responses: Option[List[Response]]
-)
-*/
-
 
 
   implicit val mtbFileFromFHIR: MTBFileBundle => dtos.MTBFile = {

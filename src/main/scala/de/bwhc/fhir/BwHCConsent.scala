@@ -22,7 +22,9 @@ final case class BwHCConsent
   identifier: NonEmptyList[Identifier],
   status: Consent.Status.Value,
   patient: LogicalReference[MTBPatient],
-  scope: BasicCodeableConcept[Consent.Scope.Value]
+  scope: BasicCodeableConcept[Consent.Scope.Value],
+  category: NonEmptyList[BasicCodeableConcept[LOINC]] =
+    NonEmptyList.one(BasicCodeableConcept(BasicCoding[LOINC]("59284-0",None)))
 )
 extends BwHCConsentProfile
 
