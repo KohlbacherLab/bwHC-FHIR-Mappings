@@ -133,7 +133,7 @@ object Mappings
         pat.dateOfDeath,
         pat.managingZPM.map(Reference[de.bwhc.fhir.ZPM](_)),
         pat.insurance
-         .map(id => List(MTBPatient.HealthInsuranceContact(Reference[HealthInsurance](id))))
+         .map(id => List(MTBPatient.HealthInsuranceContact(LogicalReference[HealthInsurance](id))))
       )
 
   implicit val patientFromFHIR: MTBPatient => dtos.Patient =
@@ -169,7 +169,7 @@ object Mappings
         eoc.period.end
           .map(_ => EpisodeOfCare.Status.Finished)
           .getOrElse(EpisodeOfCare.Status.Active),
-        Reference[MTBPatient](eoc.patient),
+        LogicalReference[MTBPatient](eoc.patient),
         eoc.period
       )
 
@@ -239,7 +239,7 @@ object Mappings
     diag =>
       de.bwhc.fhir.Diagnosis(
         NonEmptyList.one(diag.id),
-        Reference[MTBPatient](diag.patient),
+        LogicalReference[MTBPatient](diag.patient),
         diag.recordedOn,
         diag.icd10.map(icd => BasicCodeableConcept(icd.mapTo[BasicCoding[dtos.ICD10GM]])),
         diag.icdO3T.map(c =>
@@ -362,7 +362,7 @@ object Mappings
         FamilyMemberHistoryDTO(
           NonEmptyList.one(diag.id),
           FamilyMemberHistory.Status.HealthUnknown,
-          Reference[MTBPatient](diag.patient),
+          LogicalReference[MTBPatient](diag.patient),
           BasicCodeableConcept(BasicCoding(diag.relationship.code))
         )
 
@@ -397,7 +397,7 @@ object Mappings
         NonEmptyList.one(ecog.id),
         Observation.Status.Final,
         ecog.effectiveDate,
-        Reference[MTBPatient](ecog.patient),
+        LogicalReference[MTBPatient](ecog.patient),
         BasicCodeableConcept(
           BasicCoding[dtos.ECOG.Value](
             ecog.value.code.toString,
@@ -514,8 +514,8 @@ object Mappings
         th.therapyLine.map(l => Tuple1(TherapyLine(PositiveInt(l.value)))),
         Tuple1(medication),
         MedicationStatement.Status.Unknown,
-        Reference[MTBPatient](th.patient),
-        NonEmptyList.one(Reference[Condition](th.diagnosis)),
+        LogicalReference[MTBPatient](th.patient),
+        NonEmptyList.one(LogicalReference[Condition](th.diagnosis)),
         Reference.contained(medication)
       )
   }
@@ -549,8 +549,9 @@ object Mappings
         Tuple1(med),
         MedicationStatement.Status.Stopped,
         th.reasonStopped.map(r => List(BasicCodeableConcept(BasicCoding(r.code.toString,None)))),
-        Reference[MTBPatient](th.patient.mapTo[Identifier]),
-        NonEmptyList.one(Reference[Condition](th.diagnosis)),
+        LogicalReference[MTBPatient](th.patient),
+//        Reference[MTBPatient](th.patient.mapTo[Identifier]),
+        NonEmptyList.one(LogicalReference[Condition](th.diagnosis)),
         th.period.map(_.mapTo[OpenEndPeriod[LocalDate]]),
         Reference.contained(med)
       )
@@ -656,7 +657,7 @@ object Mappings
         tc.id.value,
         Observation.Status.Final,
         subject,
-        Reference[TumorSpecimen](tc.specimen),
+        LogicalReference[TumorSpecimen](tc.specimen),
         BasicCodeableConcept(BasicCoding[dtos.TumorCellContent.Method.Value](tc.method.toString,None)),
         SimpleQuantity(tc.value)
       )
@@ -679,8 +680,8 @@ object Mappings
       ObsTumorMorphology(
         rndID.toString,
         Observation.Status.Final,
-        Reference[MTBPatient](tm.patient),
-        Reference[TumorSpecimen](tm.specimen),
+        LogicalReference[MTBPatient](tm.patient),
+        LogicalReference[TumorSpecimen](tm.specimen),
         BasicCodeableConcept(
           BasicCoding(
             tm.value.code.value,
@@ -705,6 +706,7 @@ object Mappings
         histoReport.issuedOn,
         DiagnosticReport.Status.Final,
         subject,
+//        NonEmptyList.one(Reference[TumorSpecimen](histoReport.specimen)),
         NonEmptyList.one(LogicalReference[TumorSpecimen](histoReport.specimen)),
         tumorContent.map(Reference.contained(_)).toList ++
           morphology.map(Reference.contained(_)),
@@ -841,9 +843,10 @@ object Mappings
 
     ngsReport =>
 
-      import shapeless.{::,HNil}
       import ExtMetaData._
 
+//      implicit val subject  = Reference[MTBPatient](ngsReport.patient)
+//      implicit val specimen = Reference[TumorSpecimen](ngsReport.specimen)
       implicit val subject  = LogicalReference[MTBPatient](ngsReport.patient)
       implicit val specimen = LogicalReference[TumorSpecimen](ngsReport.specimen)
 
@@ -952,8 +955,8 @@ object Mappings
           MedicationRequest.Status.Unknown,          
           MedicationRequest.Intent.Proposal,
           rec.issuedOn,
-          Reference[MTBPatient](rec.patient.mapTo[Identifier]),
-          NonEmptyList.one(Reference[Condition](rec.diagnosis)),
+          LogicalReference[MTBPatient](rec.patient),
+          NonEmptyList.one(LogicalReference[Condition](rec.diagnosis)),
           Reference.contained(med),
      None //TODO: map supportingVariant 
         )
@@ -991,6 +994,51 @@ object Mappings
 
 
 
+
+  implicit def counsellingReqIdFromIdentifier(id: Identifier) =
+    dtos.GeneticCounsellingRequest.Id(id.value)
+
+  implicit def counsellingReqIdToIdentifier(id: dtos.GeneticCounsellingRequest.Id) =
+    Identifier(id.value)
+
+
+  implicit val counsellingReqToFHIR: dtos.GeneticCounsellingRequest => CounsellingRequest = {
+    req =>
+
+     CounsellingRequest(
+       NonEmptyList.one(req.id),
+       ServiceRequest.Status.Unknown,
+       ServiceRequest.Intent.Proposal,
+       LogicalReference[MTBPatient](req.patient),
+       req.issuedOn,
+       NonEmptyList.one(Note(req.reason))
+     )
+  }
+
+
+  implicit def rebiopsyReqIdFromIdentifier(id: Identifier) =
+    dtos.RebiopsyRequest.Id(id.value)
+
+  implicit def rebiopsyReqIdToIdentifier(id: dtos.RebiopsyRequest.Id) =
+    Identifier(id.value)
+
+
+  implicit val rebiopsyReqToFHIR: dtos.RebiopsyRequest => RebiopsyRequest = {
+    req =>
+
+     RebiopsyRequest(
+       NonEmptyList.one(req.id),
+       ServiceRequest.Status.Unknown,
+       ServiceRequest.Intent.Proposal,
+       LogicalReference[MTBPatient](req.patient),
+       req.issuedOn,
+       NonEmptyList.one(LogicalReference[TumorSpecimen](req.specimen))
+     )
+  }
+
+
+
+
   implicit def carePlanIdFromIdentifier(id: Identifier) =
     dtos.CarePlan.Id(id.value)
 
@@ -1007,12 +1055,18 @@ object Mappings
         CarePlan.Status.Unknown,
         CarePlan.Intent.Proposal,
         cp.issuedOn,
-        Reference[MTBPatient](cp.patient.mapTo[Identifier]),
-        NonEmptyList.one(Reference[Diagnosis](cp.diagnosis.mapTo[Identifier])),
+        LogicalReference[MTBPatient](cp.patient),
+        NonEmptyList.one(LogicalReference[Diagnosis](cp.diagnosis)),
         cp.description,
-        cp.recommendations.getOrElse(List.empty)
-           .map(LogicalReference[TherapyRecommendation](_))
-           .map(MTBCarePlan.Activity)
+        (
+          cp.recommendations.getOrElse(List.empty)
+            .map(LogicalReference[TherapyRecommendation](_)) ++
+          cp.geneticCounsellingRequest
+            .map(LogicalReference[CounsellingRequest](_)) ++
+          cp.rebiopsyRequests.getOrElse(List.empty)
+            .map(LogicalReference[CounsellingRequest](_))
+        )
+        .map(MTBCarePlan.Activity(_))
       )
 
   }
@@ -1061,8 +1115,8 @@ object Mappings
     molTh =>
 
       val identifier = NonEmptyList.one(molTh.id.mapTo[Identifier])
-      val subject    = Reference[MTBPatient](molTh.patient.mapTo[Identifier])
-      val basedOn    = NonEmptyList.one(Reference[TherapyRecommendation](molTh.basedOn.mapTo[Identifier]))
+      val subject    = LogicalReference[MTBPatient](molTh.patient)
+      val basedOn    = NonEmptyList.one(LogicalReference[TherapyRecommendation](molTh.basedOn))
       val note       = molTh.note.map(Note(_)).map(List(_))
 
       molTh match {
@@ -1286,6 +1340,8 @@ object Mappings
           mtbfile.ngsReports.getOrElse(List.empty).map(_.mapTo[SomaticNGSReport]).map(EntryOf(_)),
           mtbfile.carePlans.getOrElse(List.empty).map(_.mapTo[MTBCarePlan]).map(EntryOf(_)),
           mtbfile.recommendations.getOrElse(List.empty).map(_.mapTo[TherapyRecommendation]).map(EntryOf(_)),
+          mtbfile.geneticCounsellingRequests.getOrElse(List.empty).map(_.mapTo[CounsellingRequest]).map(EntryOf(_)),
+          mtbfile.rebiopsyRequests.getOrElse(List.empty).map(_.mapTo[RebiopsyRequest]).map(EntryOf(_)),
           mtbfile.molecularTherapies.getOrElse(List.empty).map(_.mapTo[MolecularTherapyHistory]).map(EntryOf(_)),
           mtbfile.responses.getOrElse(List.empty).map(_.mapTo[ObsRECIST]).map(EntryOf(_))
         )

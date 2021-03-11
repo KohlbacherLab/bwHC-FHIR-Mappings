@@ -24,28 +24,28 @@ extends Bundle.EntrySet
 {
   this: Product =>
 
-  val patient:                EntryElement with Entry.resource[MTBPatientProfile]
-  val episode:                EntryElement with Entry.resource[MTBEpisodeProfile]  
-  val consent:                EntryElement with Entry.resource[BwHCConsentProfile]  
-  val diagnoses:              List[EntryElement with Entry.resource[DiagnosisProfile]]
-  val familyMemberDiagnoses:  List[EntryElement with Entry.resource[FamilyMemberHistoryProfile]]
-  val previousGLTherapies:    List[EntryElement with Entry.resource[GuidelineTherapyProfile]]
-  val lastGLTherapy:          Option[EntryElement with Entry.resource[LastGuidelineTherapyProfile]]
-  val ecogs:                  List[EntryElement with Entry.resource[ObsECOGProfile]]
-  val specimens:              List[EntryElement with Entry.resource[TumorSpecimenProfile]]
-  val histology:              List[EntryElement with Entry.resource[HistologyReportProfile]]
-  val ngsReports:             List[EntryElement with Entry.resource[SomaticNGSReportProfile]]
-  val carePlans:              List[EntryElement with Entry.resource[MTBCarePlanProfile]]
-  val therapyRecommendations: List[EntryElement with Entry.resource[TherapyRecommendationProfile]]
+  val patient:                    EntryElement with Entry.resource[MTBPatientProfile]
+  val episode:                    EntryElement with Entry.resource[MTBEpisodeProfile]  
+  val consent:                    EntryElement with Entry.resource[BwHCConsentProfile]  
+  val diagnoses:                  List[EntryElement with Entry.resource[DiagnosisProfile]]
+  val familyMemberDiagnoses:      List[EntryElement with Entry.resource[FamilyMemberHistoryProfile]]
+  val previousGLTherapies:        List[EntryElement with Entry.resource[GuidelineTherapyProfile]]
+  val lastGLTherapy:              Option[EntryElement with Entry.resource[LastGuidelineTherapyProfile]]
+  val ecogs:                      List[EntryElement with Entry.resource[ObsECOGProfile]]
+  val specimens:                  List[EntryElement with Entry.resource[TumorSpecimenProfile]]
+  val histology:                  List[EntryElement with Entry.resource[HistologyReportProfile]]
+  val ngsReports:                 List[EntryElement with Entry.resource[SomaticNGSReportProfile]]
+  val carePlans:                  List[EntryElement with Entry.resource[MTBCarePlanProfile]]
+  val therapyRecommendations:     List[EntryElement with Entry.resource[TherapyRecommendationProfile]]
+  val geneticCounsellingRequests: List[EntryElement with Entry.resource[CounsellingRequestProfile]]
+  val rebiopsyRequests:           List[EntryElement with Entry.resource[RebiopsyRequestProfile]]
 /*
  TODO:
   StudyInclusionRequests,
-  RebiopsyRequests,
   HistologyReevaluationRequests,
-  CounsellingRequests
 */
-  val molecularTherapies:     List[EntryElement with Entry.resource[MolecularTherapyHistoryProfile]]
-  val responses:              List[EntryElement with Entry.resource[ObsRECISTProfile]]
+  val molecularTherapies:         List[EntryElement with Entry.resource[MolecularTherapyHistoryProfile]]
+  val responses:                  List[EntryElement with Entry.resource[ObsRECISTProfile]]
 }
 
 
@@ -58,21 +58,23 @@ extends MTBFileBundleProfile
 
 final case class MTBFileEntries
 (
-  patient:                EntryOf[MTBPatient],
-  episode:                EntryOf[MTBEpisode],
-  consent:                EntryOf[BwHCConsent],
-  diagnoses:              List[EntryOf[Diagnosis]],
-  familyMemberDiagnoses:  List[EntryOf[FamilyMemberHistoryDTO]],
-  previousGLTherapies:    List[EntryOf[PreviousGuidelineTherapy]],
-  lastGLTherapy:          Option[EntryOf[LastGuidelineTherapy]],
-  ecogs:                  List[EntryOf[ObsECOG]],
-  specimens:              List[EntryOf[TumorSpecimen]],
-  histology:              List[EntryOf[HistologyReport]],
-  ngsReports:             List[EntryOf[SomaticNGSReport]],
-  carePlans:              List[EntryOf[MTBCarePlan]],
-  therapyRecommendations: List[EntryOf[TherapyRecommendation]],
-  molecularTherapies:     List[EntryOf[MolecularTherapyHistory]],
-  responses:              List[EntryOf[ObsRECIST]]
+  patient:                    EntryOf[MTBPatient],
+  episode:                    EntryOf[MTBEpisode],
+  consent:                    EntryOf[BwHCConsent],
+  diagnoses:                  List[EntryOf[Diagnosis]],
+  familyMemberDiagnoses:      List[EntryOf[FamilyMemberHistoryDTO]],
+  previousGLTherapies:        List[EntryOf[PreviousGuidelineTherapy]],
+  lastGLTherapy:              Option[EntryOf[LastGuidelineTherapy]],
+  ecogs:                      List[EntryOf[ObsECOG]],
+  specimens:                  List[EntryOf[TumorSpecimen]],
+  histology:                  List[EntryOf[HistologyReport]],
+  ngsReports:                 List[EntryOf[SomaticNGSReport]],
+  carePlans:                  List[EntryOf[MTBCarePlan]],
+  therapyRecommendations:     List[EntryOf[TherapyRecommendation]],
+  geneticCounsellingRequests: List[EntryOf[CounsellingRequest]],
+  rebiopsyRequests:           List[EntryOf[RebiopsyRequest]],
+  molecularTherapies:         List[EntryOf[MolecularTherapyHistory]],
+  responses:                  List[EntryOf[ObsRECIST]]
 )
 extends MTBFileEntriesProfile
 

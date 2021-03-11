@@ -16,7 +16,13 @@ import play.api.libs.json.Json
 import de.bwhc.mtb.data.entry.dtos.LevelOfEvidence
 
 
-final case class LoE(
+
+//-----------------------------------------------------------------------------
+// Therapy Recommendation
+//-----------------------------------------------------------------------------
+
+final case class LoE
+(
   grade: LoE.Grade,
   addendums: Set[LoE.Addendum]
 )
@@ -91,7 +97,6 @@ final case class TherapyRecommendation
   reasonReference: NonEmptyList[LogicalReference[Condition]],
   medicationReference: LiteralReference[Medication],
   supportingInformation: Option[List[LogicalReference[SomaticVariantProfile]]]
-//  supportingInformation: NonEmptyList[Reference[SomaticVariantProfile]]
 ) extends TherapyRecommendationProfile
 
 object TherapyRecommendation
@@ -108,10 +113,15 @@ object TherapyRecommendation
 
 
 
+//-----------------------------------------------------------------------------
+// Genetic Counselling Recommendation
+//-----------------------------------------------------------------------------
+
 trait CounsellingRequestProfile
 extends ServiceRequest
    with ServiceRequest.identifierNel
    with ServiceRequest.subject[Patient]
+   with MedicationRequest.authoredOn[LocalDate,Optional]
 //   with ServiceRequest.categoryNel[
 //     CodeableConcept with CodeableConcept.codingNel[Coding[SNOMEDCT]]
 //   ]
@@ -119,6 +129,7 @@ extends ServiceRequest
 //     CodeableConcept with CodeableConcept.codingNel[Coding[SNOMEDCT]],
 //       Required
 //   ]
+   with ServiceRequest.noteNel[Annotation]
 
 
 final case class CounsellingRequest
@@ -127,8 +138,10 @@ final case class CounsellingRequest
   status: ServiceRequest.Status.Value,
   intent: ServiceRequest.Intent.Value,
   subject: LogicalReference[Patient],
+  authoredOn: Option[LocalDate],
 //  category: NonEmptyList[BasicCodeableConcept[SNOMEDCT]],
 //  code: BasicCodeableConcept[SNOMEDCT]
+  note: NonEmptyList[Note]
 )
 extends CounsellingRequestProfile
 
@@ -145,10 +158,15 @@ object CounsellingRequest
 }
 
 
+//-----------------------------------------------------------------------------
+// Re-biopsy Request
+//-----------------------------------------------------------------------------
+
 trait RebiopsyRequestProfile
 extends ServiceRequest
    with ServiceRequest.identifierNel
    with ServiceRequest.subject[Patient]
+   with MedicationRequest.authoredOn[LocalDate,Optional]
 //   with ServiceRequest.categoryNel[
 //     CodeableConcept with CodeableConcept.codingNel[Coding[SNOMEDCT]]
 //   ]
@@ -165,6 +183,7 @@ final case class RebiopsyRequest
   status: ServiceRequest.Status.Value,
   intent: ServiceRequest.Intent.Value,
   subject: LogicalReference[Patient],
+  authoredOn: Option[LocalDate],
 //  category: NonEmptyList[BasicCodeableConcept[SNOMEDCT]],
 //  code: BasicCodeableConcept[SNOMEDCT],
   specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
@@ -184,6 +203,9 @@ object RebiopsyRequest
 }
 
 
+//-----------------------------------------------------------------------------
+// MTB CarePlan
+//-----------------------------------------------------------------------------
 
 trait MTBCarePlanProfile
 extends CarePlan
@@ -193,8 +215,7 @@ extends CarePlan
    with CarePlan.created[LocalDate,Optional]
    with CarePlan.description[Optional]
    with CarePlan.activity[
-     CarePlan.ActivityElement
-       with CarePlan.Activity.reference[TherapyRecommendationProfile],
+     CarePlan.ActivityElement with CarePlan.Activity.reference[DomainResource with Request],
      Required
    ]
 
@@ -219,13 +240,12 @@ object MTBCarePlan
   implicit val profiles =
     Meta.Profiles[MTBCarePlan]("http://bwhc.de/mtb/careplan")
   
-  
   case class Activity
   (
-    reference: LogicalReference[TherapyRecommendation]
+    reference: LogicalReference[DomainResource with Request]
   )
   extends CarePlan.ActivityElement
-     with CarePlan.Activity.reference[TherapyRecommendation]
+     with CarePlan.Activity.reference[DomainResource with Request]
 
 
   import org.hl7.fhir.r4.json._
