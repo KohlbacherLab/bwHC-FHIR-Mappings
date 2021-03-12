@@ -1090,6 +1090,29 @@ object Mappings
   }
 
 
+  //---------------------------------------------------------------------------
+  // Claim / ClaimResponse mappings
+  //---------------------------------------------------------------------------
+
+
+  implicit val claimToFHIR: dtos.Claim => ClaimDTO = {
+
+    claim =>
+
+      ClaimDTO(
+        NonEmptyList.one(Identifier(claim.id.value)),
+        claim.issuedOn,
+        BasicCodeableConcept(BasicCoding(Claim.Type.Institutional)),
+        Claim.Use.Claim,
+        BasicCodeableConcept(BasicCoding(ProcessPriority.Normal)),
+        Claim.Status.Draft,
+        LogicalReference[TherapyRecommendation](claim.therapy),
+        LogicalReference[Patient](claim.patient),
+        LogicalReference[Organization](Identifier("TODO")),  //TODO
+      )
+  }
+
+
 
   //---------------------------------------------------------------------------
   // Molecular Therapy mappings
@@ -1342,6 +1365,7 @@ object Mappings
           mtbfile.recommendations.getOrElse(List.empty).map(_.mapTo[TherapyRecommendation]).map(EntryOf(_)),
           mtbfile.geneticCounsellingRequests.getOrElse(List.empty).map(_.mapTo[CounsellingRequest]).map(EntryOf(_)),
           mtbfile.rebiopsyRequests.getOrElse(List.empty).map(_.mapTo[RebiopsyRequest]).map(EntryOf(_)),
+          mtbfile.claims.getOrElse(List.empty).map(_.mapTo[ClaimDTO]).map(EntryOf(_)),
           mtbfile.molecularTherapies.getOrElse(List.empty).map(_.mapTo[MolecularTherapyHistory]).map(EntryOf(_)),
           mtbfile.responses.getOrElse(List.empty).map(_.mapTo[ObsRECIST]).map(EntryOf(_))
         )

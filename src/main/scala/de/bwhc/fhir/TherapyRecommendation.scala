@@ -174,7 +174,7 @@ extends ServiceRequest
 //     CodeableConcept with CodeableConcept.codingNel[Coding[SNOMEDCT]],
 //       Required
 //   ]
-   with ServiceRequest.specimenNel[TumorSpecimen]
+   with ServiceRequest.specimenNel
 
 
 final case class RebiopsyRequest

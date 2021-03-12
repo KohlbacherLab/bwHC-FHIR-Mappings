@@ -27,7 +27,7 @@ extends SimpleExtension[BasicCodeableConcept[dtos.ICD10GM]]
 
 object SampleDiagnosis
 {
-  implicit val url    =
+  implicit val url =
     Extension.Url[SampleDiagnosis]("https://fhir.bbmri.de/StructureDefinition/SampleDiagnosis")
 
   implicit val format =
