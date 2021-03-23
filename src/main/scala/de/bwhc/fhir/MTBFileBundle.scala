@@ -43,10 +43,10 @@ extends Bundle.EntrySet
  TODO:
   StudyInclusionRequests,
   HistologyReevaluationRequests,
-  Claims,
   ClaimResponses,
 */
   val claims:                     List[EntryElement with Entry.resource[ClaimProfile]]
+  val claimResponses:             List[EntryElement with Entry.resource[ClaimResponseProfile]]
   val molecularTherapies:         List[EntryElement with Entry.resource[MolecularTherapyHistoryProfile]]
   val responses:                  List[EntryElement with Entry.resource[ObsRECISTProfile]]
 }
@@ -77,6 +77,7 @@ final case class MTBFileEntries
   geneticCounsellingRequests: List[EntryOf[CounsellingRequest]],
   rebiopsyRequests:           List[EntryOf[RebiopsyRequest]],
   claims:                     List[EntryOf[ClaimDTO]],
+  claimResponses:             List[EntryOf[ClaimResponseDTO]],
   molecularTherapies:         List[EntryOf[MolecularTherapyHistory]],
   responses:                  List[EntryOf[ObsRECIST]]
 )

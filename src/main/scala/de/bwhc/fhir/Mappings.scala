@@ -393,6 +393,9 @@ object Mappings
 
   implicit val ecogStatusToFHIR: dtos.ECOGStatus => ObsECOG = {
     ecog =>
+
+      import de.bwhc.mtb.data.entry.dtos.ValueSets._
+
       ObsECOG(
         NonEmptyList.one(ecog.id),
         Observation.Status.Final,
@@ -401,7 +404,8 @@ object Mappings
         BasicCodeableConcept(
           BasicCoding[dtos.ECOG.Value](
             ecog.value.code.toString,
-            ecog.value.display
+            dtos.ValueSet[dtos.ECOG.Value].displayOf(ecog.value.code),
+//            ecog.value.display
           )
         ) 
       )
@@ -416,7 +420,8 @@ object Mappings
         obs.effectiveDateTime,
         dtos.Coding(
           dtos.ECOG.withName(obs.valueCodeableConcept.coding.head.code),
-          obs.valueCodeableConcept.coding.head.display
+          None
+//          obs.valueCodeableConcept.coding.head.display
         )
       )
   
@@ -1094,7 +1099,6 @@ object Mappings
   // Claim / ClaimResponse mappings
   //---------------------------------------------------------------------------
 
-
   implicit val claimToFHIR: dtos.Claim => ClaimDTO = {
 
     claim =>
@@ -1109,6 +1113,49 @@ object Mappings
         LogicalReference[TherapyRecommendation](claim.therapy),
         LogicalReference[Patient](claim.patient),
         LogicalReference[Organization](Identifier("TODO")),  //TODO
+      )
+  }
+
+  implicit val claimFromFHIR: ClaimDTO => dtos.Claim = {
+    claim =>
+      dtos.Claim(
+        dtos.Claim.Id(claim.identifier.head.value),
+        dtos.Patient.Id(claim.patient.identifier.value),
+        claim.created,
+        dtos.TherapyRecommendation.Id(claim.prescription.identifier.value),
+      )
+  }
+
+
+
+  implicit def claimResponseToFHIR(
+    implicit patient: dtos.Patient
+  ): dtos.ClaimResponse => ClaimResponseDTO = {
+
+    cr =>
+
+      ClaimResponseDTO(
+        NonEmptyList.one(Identifier(cr.id.value)),
+        cr.issuedOn,
+        BasicCodeableConcept(BasicCoding(Claim.Type.Institutional)),
+        Claim.Use.Claim,
+        Claim.Status.Draft,
+        LogicalReference[Patient](cr.patient),
+        LogicalReference[Claim](Identifier(cr.claim.value)),
+        LogicalReference[Organization](Identifier(patient.insurance.map(_.value).getOrElse("Unknown"))),  //TODO
+        ClaimResponse.Outcome.Partial  //TODO
+      )
+  }
+
+  implicit val claimResponseFromFHIR: ClaimResponseDTO => dtos.ClaimResponse = {
+    cr =>
+      dtos.ClaimResponse(
+        dtos.ClaimResponse.Id(cr.identifier.head.value),
+        dtos.Claim.Id(cr.request.identifier.value),
+        dtos.Patient.Id(cr.patient.identifier.value),
+        cr.created,
+        dtos.ClaimResponse.Status.Accepted,  //TODO
+        None  //TODO
       )
   }
 
@@ -1347,6 +1394,8 @@ object Mappings
   implicit val mtbFileToFHIR: dtos.MTBFile => MTBFileBundle = {
 
     mtbfile =>
+
+      implicit val pat = mtbfile.patient
       
       MTBFileBundle(
         MTBFileEntries(
@@ -1366,6 +1415,7 @@ object Mappings
           mtbfile.geneticCounsellingRequests.getOrElse(List.empty).map(_.mapTo[CounsellingRequest]).map(EntryOf(_)),
           mtbfile.rebiopsyRequests.getOrElse(List.empty).map(_.mapTo[RebiopsyRequest]).map(EntryOf(_)),
           mtbfile.claims.getOrElse(List.empty).map(_.mapTo[ClaimDTO]).map(EntryOf(_)),
+          mtbfile.claimResponses.getOrElse(List.empty).map(_.mapTo[ClaimResponseDTO]).map(EntryOf(_)),
           mtbfile.molecularTherapies.getOrElse(List.empty).map(_.mapTo[MolecularTherapyHistory]).map(EntryOf(_)),
           mtbfile.responses.getOrElse(List.empty).map(_.mapTo[ObsRECIST]).map(EntryOf(_))
         )
