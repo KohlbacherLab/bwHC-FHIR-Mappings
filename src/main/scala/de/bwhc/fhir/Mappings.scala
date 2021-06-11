@@ -136,6 +136,7 @@ object Mappings
          .map(id => List(MTBPatient.HealthInsuranceContact(LogicalReference[HealthInsurance](id))))
       )
 
+
   implicit val patientFromFHIR: MTBPatient => dtos.Patient =
     pat => 
       dtos.Patient(
@@ -258,7 +259,8 @@ object Mappings
           diag.statusHistory.map(sts =>
             sts.map(st =>
               Diagnosis.Stage(
-                Some(Tuple1(Diagnosis.Stage.Date(st.date))),
+                Some(List(Diagnosis.Stage.Date(st.date))),
+//                Some(Tuple1(Diagnosis.Stage.Date(st.date))),
                 BasicCodeableConcept( 
                   BasicCoding[dtos.Diagnosis.Status.Value](st.status.toString, None)
                 )
@@ -268,7 +270,8 @@ object Mappings
           .getOrElse(List.empty[Diagnosis.Stage[dtos.Diagnosis.Status.Value]]), 
           diag.whoGrade.map(who =>
             Diagnosis.Stage(
-              diag.recordedOn.map(d => Tuple1(Diagnosis.Stage.Date(d))),
+              diag.recordedOn.map(d => List(Diagnosis.Stage.Date(d))),
+//              diag.recordedOn.map(d => Tuple1(Diagnosis.Stage.Date(d))),
               BasicCodeableConcept(
                 BasicCoding[dtos.WHOGrade.Value](who.code.toString,who.display)
               )
@@ -325,7 +328,8 @@ object Mappings
             .map(st =>
               dtos.Diagnosis.StatusOnDate( 
                 dtos.Diagnosis.Status.withName(st.summary.coding.head.code),
-                st.extension.get._1.value
+                st.extension.get.head.value
+//                st.extension.get._1.value
               )
             )
         ).filterNot(_.isEmpty),
@@ -405,7 +409,6 @@ object Mappings
           BasicCoding[dtos.ECOG.Value](
             ecog.value.code.toString,
             dtos.ValueSet[dtos.ECOG.Value].displayOf(ecog.value.code),
-//            ecog.value.display
           )
         ) 
       )
@@ -421,7 +424,6 @@ object Mappings
         dtos.Coding(
           dtos.ECOG.withName(obs.valueCodeableConcept.coding.head.code),
           None
-//          obs.valueCodeableConcept.coding.head.display
         )
       )
   
@@ -516,8 +518,10 @@ object Mappings
 
       PreviousGuidelineTherapy(
         NonEmptyList.one(th.id),
-        th.therapyLine.map(l => Tuple1(TherapyLine(PositiveInt(l.value)))),
-        Tuple1(medication),
+        th.therapyLine.map(l => List(TherapyLine(PositiveInt(l.value)))),
+//        th.therapyLine.map(l => Tuple1(TherapyLine(PositiveInt(l.value)))),
+        ContainedMedication(medication),
+//        Tuple1(medication),
         MedicationStatement.Status.Unknown,
         LogicalReference[MTBPatient](th.patient),
         NonEmptyList.one(LogicalReference[Condition](th.diagnosis)),
@@ -532,8 +536,10 @@ object Mappings
         th.identifier.head,
       th.subject.identifier,
         th.reasonReference.head.identifier,
-        th.extension.map { case Tuple1(l) => dtos.TherapyLine(l.value) },
-        Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]])
+        th.extension.map { l => dtos.TherapyLine(l.head.value) },
+//        th.extension.map { case Tuple1(l) => dtos.TherapyLine(l.value) },
+        Some(th.contained.medication.mapTo[List[dtos.Coding[ATC]]])
+//        Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]])
       )
 
   }
@@ -546,19 +552,20 @@ object Mappings
 
       import LastGuidelineTherapy._
 
-      val med = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
+      val medication = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
 
       LastGuidelineTherapy(
         NonEmptyList.one(th.id),
-        th.therapyLine.map(l => Tuple1(TherapyLine(PositiveInt(l.value)))),
-        Tuple1(med),
+        th.therapyLine.map(l => List(TherapyLine(PositiveInt(l.value)))),
+//        th.therapyLine.map(l => Tuple1(TherapyLine(PositiveInt(l.value)))),
+        ContainedMedication(medication),
+//        Tuple1(med),
         MedicationStatement.Status.Stopped,
         th.reasonStopped.map(r => List(BasicCodeableConcept(BasicCoding(r.code.toString,None)))),
         LogicalReference[MTBPatient](th.patient),
-//        Reference[MTBPatient](th.patient.mapTo[Identifier]),
         NonEmptyList.one(LogicalReference[Condition](th.diagnosis)),
         th.period.map(_.mapTo[OpenEndPeriod[LocalDate]]),
-        Reference.contained(med)
+        Reference.contained(medication)
       )
 
   }
@@ -575,9 +582,11 @@ object Mappings
         th.identifier.head,
         th.subject.identifier,
         th.reasonReference.head.identifier,
-        th.extension.map { case Tuple1(ext) => dtos.TherapyLine(ext.value.value) },
+        th.extension.map { l => dtos.TherapyLine(l.head.value.value) },
+//        th.extension.map { case Tuple1(ext) => dtos.TherapyLine(ext.value.value) },
         th.period.map(_.mapTo[dtos.OpenEndPeriod[LocalDate]]),
-        Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
+        Some(th.contained.medication.mapTo[List[dtos.Coding[ATC]]]),
+//        Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
         th.statusReason.flatMap(_.headOption)
           .map(cc =>
             dtos.Coding[StopReason.Value](
@@ -711,11 +720,11 @@ object Mappings
         histoReport.issuedOn,
         DiagnosticReport.Status.Final,
         subject,
-//        NonEmptyList.one(Reference[TumorSpecimen](histoReport.specimen)),
         NonEmptyList.one(LogicalReference[TumorSpecimen](histoReport.specimen)),
-        tumorContent.map(Reference.contained(_)).toList ++
-          morphology.map(Reference.contained(_)),
-        (
+        (tumorContent.map(Reference.contained(_)) ++
+           morphology.map(Reference.contained(_))).toList,
+//        (
+        HistologyReport.Results(
           morphology,
           tumorContent
         )
@@ -850,8 +859,6 @@ object Mappings
 
       import ExtMetaData._
 
-//      implicit val subject  = Reference[MTBPatient](ngsReport.patient)
-//      implicit val specimen = Reference[TumorSpecimen](ngsReport.specimen)
       implicit val subject  = LogicalReference[MTBPatient](ngsReport.patient)
       implicit val specimen = LogicalReference[TumorSpecimen](ngsReport.specimen)
 
@@ -865,18 +872,7 @@ object Mappings
         NonEmptyList.one(Identifier(ngsReport.id.value)),
         ngsReport.issueDate,
         DiagnosticReport.Status.Final,
-        ngsReport.metadata.map {
-         case dtos.SomaticNGSReport.MetaData(kitType,manufacturer,seq,ref,pipeline) =>
-            ExtMetaData(
-              KitType(kitType),
-              KitManufacturer(manufacturer),
-              Sequencer(seq),
-              RefGenome(ref.value),
-              pipeline.map(Pipeline(_))
-            )
-        },
-/*
-        (
+        SomaticNGSReport.Extensions(
           ExtSequencingType(BasicCoding[dtos.SomaticNGSReport.SequencingType](ngsReport.sequencingType.value)),
           ngsReport.metadata.map {
            case dtos.SomaticNGSReport.MetaData(kitType,manufacturer,seq,ref,pipeline) =>
@@ -889,7 +885,6 @@ object Mappings
               )
           }
         ),
-*/
         subject,
         NonEmptyList.one(specimen),
         NonEmptyList.of(
@@ -947,7 +942,8 @@ object Mappings
         TherapyRecommendation(
           NonEmptyList.one(rec.id),
           rec.levelOfEvidence.map( loe =>
-            Tuple1(
+//            Tuple1(
+            List(
               LoE(
                 LoE.Grade(BasicCoding(loe.grading.code,None)),
                 loe.addendums.getOrElse(Set.empty)
@@ -955,7 +951,8 @@ object Mappings
               )
             )
           ),
-          Tuple1(med),
+          ContainedMedication(med),
+//          Tuple1(med),
           rec.priority.map(_.mapTo[MedicationRequest.Priority.Value]),
           MedicationRequest.Status.Unknown,          
           MedicationRequest.Intent.Proposal,
@@ -979,9 +976,12 @@ object Mappings
           rec.subject.identifier,
           rec.reasonReference.head.identifier,
           rec.authoredOn,
-          Some(rec.contained._1.mapTo[List[dtos.Coding[ATC]]]),
+          Some(rec.contained.medication.mapTo[List[dtos.Coding[ATC]]]),
+//          Some(rec.contained._1.mapTo[List[dtos.Coding[ATC]]]),
           rec.priority.map(_.mapTo[dtos.TherapyRecommendation.Priority.Value]),
-          rec.extension.map { case Tuple1(loe) =>
+//          rec.extension.map { case Tuple1(loe) =>
+          rec.extension.map { l =>
+            val loe = l.head
             dtos.LevelOfEvidence(
               dtos.Coding(dtos.LevelOfEvidence.Grading.withName(loe.grade.value.code),None),
               Option(loe.addendums)
@@ -1211,7 +1211,8 @@ object Mappings
 
           StoppedMolecularTherapy(
             identifier,
-            Tuple1(medication),
+            ContainedMedication(medication),
+//            Tuple1(medication),
             basedOn,
             molTh.recordedOn,
             subject,
@@ -1231,7 +1232,8 @@ object Mappings
 
           CompletedMolecularTherapy(
             identifier,
-            Tuple1(medication),
+            ContainedMedication(medication),
+//            Tuple1(medication),
             basedOn,
             molTh.recordedOn,
             subject,
@@ -1248,7 +1250,8 @@ object Mappings
 
           ActiveMolecularTherapy(
             identifier,
-            Tuple1(medication),
+            ContainedMedication(medication),
+//            Tuple1(medication),
             basedOn,
             molTh.recordedOn,
             subject,
@@ -1303,7 +1306,8 @@ object Mappings
             molTh.dateAsserted,
             th.basedOn.head.identifier,
             dtos.ClosedPeriod(th.effectivePeriod.start,th.effectivePeriod.end),
-            Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
+            Some(th.contained.medication.mapTo[List[dtos.Coding[ATC]]]),
+//            Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
             th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
             dtos.Coding(StopReason.withName(th.statusReason.head.coding.head.code),None),
             note
@@ -1317,7 +1321,8 @@ object Mappings
             molTh.dateAsserted,
             th.basedOn.head.identifier,
             dtos.ClosedPeriod(th.effectivePeriod.start,th.effectivePeriod.end),
-            Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
+            Some(th.contained.medication.mapTo[List[dtos.Coding[ATC]]]),
+//            Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
             th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
             note
           )
@@ -1330,7 +1335,8 @@ object Mappings
             molTh.dateAsserted,
             th.basedOn.head.identifier,
             dtos.OpenEndPeriod(th.effectivePeriod.start),
-            Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
+            Some(th.contained.medication.mapTo[List[dtos.Coding[ATC]]]),
+//            Some(th.contained._1.mapTo[List[dtos.Coding[ATC]]]),
             th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
             note
           )
@@ -1387,16 +1393,52 @@ object Mappings
   }
 
 
+/*
+  implicit class FHIROps[T](val t: T) extends AnyVal
+  {
+    def toFHIR[R <: Resource](implicit f: T => R) = f(t)
+  }
+*/
+
+
   //---------------------------------------------------------------------------
   // MTB File mappings
   //---------------------------------------------------------------------------
+
 
   implicit val mtbFileToFHIR: dtos.MTBFile => MTBFileBundle = {
 
     mtbfile =>
 
+      implicit def toBundleEntry[R <: Resource](r: R): EntryOf[R] = EntryOf(r)
+
       implicit val pat = mtbfile.patient
       
+      MTBFileBundle(
+        MTBFileEntries(
+//          mtbfile.patient.toFHIR,
+          mtbfile.patient.mapTo[MTBPatient],
+          mtbfile.episode.mapTo[MTBEpisode],
+          mtbfile.consent.mapTo[BwHCConsent],
+          mtbfile.diagnoses.getOrElse(List.empty).map(_.mapTo[Diagnosis]),
+          mtbfile.familyMemberDiagnoses.getOrElse(List.empty).map(_.mapTo[FamilyMemberHistoryDTO]),
+          mtbfile.previousGuidelineTherapies.getOrElse(List.empty).map(_.mapTo[PreviousGuidelineTherapy]),
+          mtbfile.lastGuidelineTherapy.map(_.mapTo[LastGuidelineTherapy]),
+          mtbfile.ecogStatus.getOrElse(List.empty).map(_.mapTo[ObsECOG]),
+          mtbfile.specimens.getOrElse(List.empty).map(_.mapTo[TumorSpecimen]),
+          mtbfile.histologyReports.getOrElse(List.empty).map(_.mapTo[HistologyReport]),
+          mtbfile.ngsReports.getOrElse(List.empty).map(_.mapTo[SomaticNGSReport]),
+          mtbfile.carePlans.getOrElse(List.empty).map(_.mapTo[MTBCarePlan]),
+          mtbfile.recommendations.getOrElse(List.empty).map(_.mapTo[TherapyRecommendation]),
+          mtbfile.geneticCounsellingRequests.getOrElse(List.empty).map(_.mapTo[CounsellingRequest]),
+          mtbfile.rebiopsyRequests.getOrElse(List.empty).map(_.mapTo[RebiopsyRequest]),
+          mtbfile.claims.getOrElse(List.empty).map(_.mapTo[ClaimDTO]),
+          mtbfile.claimResponses.getOrElse(List.empty).map(_.mapTo[ClaimResponseDTO]),
+          mtbfile.molecularTherapies.getOrElse(List.empty).map(_.mapTo[MolecularTherapyHistory]),
+          mtbfile.responses.getOrElse(List.empty).map(_.mapTo[ObsRECIST])
+        )
+      )
+/*
       MTBFileBundle(
         MTBFileEntries(
           EntryOf(mtbfile.patient.mapTo[MTBPatient]),
@@ -1420,7 +1462,7 @@ object Mappings
           mtbfile.responses.getOrElse(List.empty).map(_.mapTo[ObsRECIST]).map(EntryOf(_))
         )
       )
-
+*/
     }
 
 

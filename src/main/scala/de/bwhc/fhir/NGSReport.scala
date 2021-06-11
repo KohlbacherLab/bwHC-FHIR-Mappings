@@ -241,34 +241,23 @@ extends DiagnosticReport
    with DiagnosticReport.subject[Patient,Required]
    with DiagnosticReport.specimenNel[TumorSpecimenProfile]
    with DiagnosticReport.issued[LocalDate,Required]
-//TODO: sequencing type, metadata
-//   with DiagnosticReport.extensions[Product1[ExtSequencingType],Required]
-   with DiagnosticReport.extension[ExtMetaData,Required]
-/*
    with DiagnosticReport.extensions[
-     Product2[
-       ExtSequencingType,
-       List[ExtMetaData]
-     ],
+     ExtensionSet {
+       val sequencingType: ExtSequencingType
+       val metadata: List[ExtMetaData]
+     },
      Required
    ]
-*/
    with DiagnosticReport.resultNel[Observation]
-   with DiagnosticReport.contained[SomaticNGSReportProfile.Results]
-
-object SomaticNGSReportProfile
-{
-  trait Results extends Product
-  {
-    val tumorContent:   ObsTumorCellContentProfile
-    val tmb:            ObsTMBProfile
-    val msi:            Option[ObsMSIProfile]
-    val brcaness:       Option[ObsBRCAnessProfile]
-    val simpleVariants: List[SimpleVariantProfile]
-  }
-}
-
-
+   with DiagnosticReport.contained[
+     ContainedResources {
+       val tumorContent:   ObsTumorCellContentProfile
+       val tmb:            ObsTMBProfile
+       val msi:            Option[ObsMSIProfile]
+       val brcaness:       Option[ObsBRCAnessProfile]
+       val simpleVariants: List[SimpleVariantProfile]
+     }
+   ]
 
 
 final case class SomaticNGSReport
@@ -276,9 +265,7 @@ final case class SomaticNGSReport
   identifier: NonEmptyList[Identifier],
   issued: LocalDate,
   status: DiagnosticReport.Status.Value,
-//  extension: Tuple1[ExtSequencingType],
-  extension: List[ExtMetaData],
-//  extension: (ExtSequencingType,List[ExtMetaData]),
+  extension: SomaticNGSReport.Extensions,
   subject: LogicalReference[MTBPatient],
   specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
   result: NonEmptyList[LiteralReference[Observation]],
@@ -296,6 +283,21 @@ object SomaticNGSReport
   implicit val code =
     Code[SomaticNGSReport](LOINC("TODO: LOINC Code NGS Report",Some("Somatic NGS Report")))
 
+  
+  final case class Extensions
+  (
+    sequencingType: ExtSequencingType,
+    metadata: List[ExtMetaData]
+  )
+  extends ExtensionSet
+
+  object Extensions {
+
+    import json.extensions._
+
+    implicit val format = json.extensions.format[Extensions]
+  }
+
 
   final case class Results
   (
@@ -305,11 +307,16 @@ object SomaticNGSReport
     brcaness:       Option[ObsBRCAness],
     simpleVariants: List[SimpleVariant]
   )
-  extends SomaticNGSReportProfile.Results
+  extends ContainedResources
 
 
-  import json.contained._
-//  import json.extensions._
+  object Results {
+
+    import json.contained._
+
+    implicit val format = json.contained.format[Results]
+  }
+
 
 
   implicit val format = Json.format[SomaticNGSReport]

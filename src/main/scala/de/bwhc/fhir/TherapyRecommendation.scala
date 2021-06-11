@@ -73,10 +73,14 @@ object LoE
 trait TherapyRecommendationProfile
 extends MedicationRequest
    with MedicationRequest.identifierNel
-   with MedicationRequest.extensions[Product1[LoE],Optional]
+   with MedicationRequest.extension[LoE,Optional]
    with MedicationRequest.subject[Patient]
    with MedicationRequest.reasonReferenceNel
-   with MedicationRequest.contained[Product1[MTBMedicationProfile]]
+   with MedicationRequest.contained[
+     ContainedResources {
+       val medication: MTBMedicationProfile
+     }
+   ]
    with MedicationRequest.authoredOn[LocalDate,Optional]
    with MedicationRequest.priority[Optional]
    with MedicationRequest.medicationReference[Medication]
@@ -87,8 +91,8 @@ extends MedicationRequest
 final case class TherapyRecommendation
 (
   identifier: NonEmptyList[Identifier],
-  extension: Option[Tuple1[LoE]],
-  contained: Tuple1[MTBMedication],
+  extension: Option[List[LoE]],
+  contained: ContainedMedication,  
   priority: Option[MedicationRequest.Priority.Value],
   status: MedicationRequest.Status.Value,
   intent: MedicationRequest.Intent.Value,

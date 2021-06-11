@@ -29,8 +29,9 @@ object TherapyLine
 sealed trait GuidelineTherapyProfile
 extends MedicationStatement
    with MedicationStatement.identifierNel
-   with MedicationStatement.extensions[Product1[TherapyLine],Optional]
-   with MedicationStatement.contained[Product1[MTBMedicationProfile]]
+   with MedicationStatement.extension[TherapyLine,Optional]
+//   with MedicationStatement.extensions[Product1[TherapyLine],Optional]
+   with MedicationStatement.contained[ContainedResources { val medication: MTBMedicationProfile }]
    with MedicationStatement.subject[Patient,Required]
    with MedicationStatement.reasonReferenceNel
    with MedicationStatement.medicationReference[MTBMedicationProfile]
@@ -45,11 +46,17 @@ extends GuidelineTherapyProfile
    ]
 
 
+final case class ContainedMedication(
+  medication: MTBMedication 
+)
+extends ContainedResources
+
 final case class PreviousGuidelineTherapy
 (
   identifier: NonEmptyList[Identifier],
-  extension: Option[Tuple1[TherapyLine]],
-  contained: Tuple1[MTBMedication],
+  extension: Option[List[TherapyLine]],
+//  extension: Option[Tuple1[TherapyLine]],
+  contained: ContainedMedication,
   status: MedicationStatement.Status.Value,
   subject: LogicalReference[MTBPatient],
   reasonReference: NonEmptyList[LogicalReference[Condition]],
@@ -61,8 +68,9 @@ extends GuidelineTherapyProfile
 final case class LastGuidelineTherapy
 (
   identifier: NonEmptyList[Identifier],
-  extension: Option[Tuple1[TherapyLine]],
-  contained: Tuple1[MTBMedication],
+  extension: Option[List[TherapyLine]],
+//  extension: Option[Tuple1[TherapyLine]],
+  contained: ContainedMedication,
   status: MedicationStatement.Status.Value,
   statusReason: Optional[List[BasicCodeableConcept[GuidelineTherapy.StopReason.Value]]],
   subject: LogicalReference[MTBPatient],

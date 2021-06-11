@@ -41,14 +41,16 @@ extends Condition
            with Condition.Stage.summary[
              CodeableConcept with CodeableConcept.codingNel[Coding[dtos.Diagnosis.Status.Value]]
            ]
-           with Condition.Stage.extensions[Product1[SimpleExtension[LocalDate]],Optional]
+           with Condition.Stage.extension[SimpleExtension[LocalDate],Optional]
+//           with Condition.Stage.extensions[Product1[SimpleExtension[LocalDate]],Optional]
        ],
        Option[
          Condition.StageElement
          with Condition.Stage.summary[
            CodeableConcept with CodeableConcept.codingNel[Coding[WHOGrade.Value]]
          ]
-         with Condition.Stage.extensions[Product1[SimpleExtension[LocalDate]],Optional]
+         with Condition.Stage.extension[SimpleExtension[LocalDate],Optional]
+//         with Condition.Stage.extensions[Product1[SimpleExtension[LocalDate]],Optional]
        ]
      ],
      Required
@@ -92,12 +94,14 @@ object Diagnosis
   }
 
   case class Stage[T](
-    extension: Option[Tuple1[Stage.Date]],
+    extension: Option[List[Stage.Date]],
+//    extension: Option[Tuple1[Stage.Date]],
     summary: BasicCodeableConcept[T]
   )
   extends Condition.StageElement
      with Condition.Stage.summary[BasicCodeableConcept[T]]
-     with Condition.Stage.extensions[Tuple1[Stage.Date],Optional]
+     with Condition.Stage.extension[Stage.Date,Optional]
+//     with Condition.Stage.extensions[Tuple1[Stage.Date],Optional]
 
 
   case class HistologyEvidence(

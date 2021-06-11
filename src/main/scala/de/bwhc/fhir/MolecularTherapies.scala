@@ -147,7 +147,7 @@ extends MolecularTherapy
 final case class StoppedMolecularTherapy
 (
   identifier: NonEmptyList[Identifier],
-  contained: Tuple1[MTBMedication],
+  contained: ContainedMedication,
   basedOn: NonEmptyList[LogicalReference[TherapyRecommendation]],
   dateAsserted: LocalDate,
   subject: LogicalReference[MTBPatient],
@@ -159,7 +159,7 @@ final case class StoppedMolecularTherapy
   note: Option[List[Note]],
 )
 extends MolecularTherapy
-   with MedicationStatement.contained[Product1[MTBMedicationProfile]]
+   with MedicationStatement.contained[ContainedResources { val medication: MTBMedicationProfile }]
    with MedicationStatement.effectivePeriod[ClosedPeriod[LocalDate],Required]
    with MedicationStatement.dosage[DosageDensityProfile,Optional]
    with MedicationStatement.statusReasonNel[
@@ -173,7 +173,7 @@ extends MolecularTherapy
 final case class CompletedMolecularTherapy
 (
   identifier: NonEmptyList[Identifier],
-  contained: Tuple1[MTBMedication],
+  contained: ContainedMedication,
   basedOn: NonEmptyList[LogicalReference[TherapyRecommendation]],
   dateAsserted: LocalDate,
   subject: LogicalReference[MTBPatient],
@@ -184,7 +184,7 @@ final case class CompletedMolecularTherapy
   note: Option[List[Note]],
 )
 extends MolecularTherapy
-   with MedicationStatement.contained[Product1[MTBMedicationProfile]]
+   with MedicationStatement.contained[ContainedResources { val medication: MTBMedicationProfile }]
    with MedicationStatement.effectivePeriod[ClosedPeriod[LocalDate],Required]
    with MedicationStatement.dosage[DosageDensityProfile,Optional]
 {
@@ -195,7 +195,7 @@ extends MolecularTherapy
 final case class ActiveMolecularTherapy
 (
   identifier: NonEmptyList[Identifier],
-  contained: Tuple1[MTBMedication],
+  contained: ContainedMedication,
   basedOn: NonEmptyList[LogicalReference[TherapyRecommendation]],
   dateAsserted: LocalDate,
   subject: LogicalReference[MTBPatient],
@@ -206,7 +206,7 @@ final case class ActiveMolecularTherapy
   note: Option[List[Note]],
 )
 extends MolecularTherapy
-   with MedicationStatement.contained[Product1[MTBMedicationProfile]]
+   with MedicationStatement.contained[ContainedResources { val medication: MTBMedicationProfile }]
    with MedicationStatement.effectivePeriod[OpenEndPeriod[LocalDate],Required]
    with MedicationStatement.dosage[DosageDensityProfile,Optional]
 {

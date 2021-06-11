@@ -77,11 +77,19 @@ extends DiagnosticReport
    with DiagnosticReport.specimenNel[TumorSpecimenProfile]
    with DiagnosticReport.issued[LocalDate,Optional]
    with DiagnosticReport.result[Observation,Required]
+/*
    with DiagnosticReport.contained[
      Product2[
        Option[ObsTumorMorphologyProfile],
        Option[ObsTumorCellContentProfile]
      ]
+   ]
+*/
+   with DiagnosticReport.contained[
+     ContainedResources {
+       val tumorMorphology: Option[ObsTumorMorphologyProfile]
+       val tumorCellContent: Option[ObsTumorCellContentProfile]
+     }
    ]
 
 
@@ -93,10 +101,13 @@ final case class HistologyReport
   subject: LogicalReference[MTBPatient],
   specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
   result: List[LiteralReference[Observation]],
+/*
   contained: (
     Option[ObsTumorMorphology],
     Option[ObsTumorCellContent]
   )
+*/
+  contained: HistologyReport.Results
 )
 extends HistologyReportProfile
 
@@ -110,6 +121,12 @@ object HistologyReport
   implicit val code =
     Code[HistologyReport](LOINC("TODO: LOINC Code Histology Report",Some("Histology Report")))
 
+  final case class Results
+  (
+    tumorMorphology: Option[ObsTumorMorphology],
+    tumorCellContent: Option[ObsTumorCellContent]
+  )
+  extends ContainedResources
 
 
   import json.contained._
