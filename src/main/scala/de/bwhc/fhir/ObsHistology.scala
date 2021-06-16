@@ -24,7 +24,7 @@ import CodingSystems._
 
 
 trait ObsHistologyProfile
-extends Observation
+extends ObservationSC
    with Observation.identifierNel
    with Observation.effectiveDateTime[LocalDate,Optional]
    with Observation.subject[MTBPatient,Required]

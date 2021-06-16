@@ -23,7 +23,8 @@ import de.bwhc.mtb.data.entry.dtos.SomaticNGSReport.SequencingType
 //-----------------------------------------------------------------------------
 
 abstract class ObsTumorCellContentProfile
-extends Observation
+//extends Observation
+extends ObservationSC
    with Observation.id[Required]
    with Observation.subject[Patient,Required]
    with Observation.specimen[Required]
@@ -68,7 +69,8 @@ object ObsTumorCellContent
 //-----------------------------------------------------------------------------
 
 abstract class ObsTMBProfile
-extends Observation
+extends ObservationSC
+//extends Observation
    with Observation.id[Required]
    with Observation.subject[Patient,Required]
    with Observation.specimen[Required]
@@ -101,7 +103,8 @@ object ObsTMB
 //-----------------------------------------------------------------------------
 
 abstract class ObsMSIProfile
-extends Observation
+//extends Observation
+extends ObservationSC
    with Observation.id[Required]
    with Observation.subject[Patient,Required]
    with Observation.specimen[Required]
@@ -135,7 +138,8 @@ object ObsMSI
 //-----------------------------------------------------------------------------
 
 abstract class ObsBRCAnessProfile
-extends Observation
+//extends Observation
+extends ObservationSC
    with Observation.id[Required]
    with Observation.subject[Patient,Required]
    with Observation.specimen[Required]
@@ -236,7 +240,8 @@ object ExtMetaData
 
 
 trait SomaticNGSReportProfile
-extends DiagnosticReport
+extends DiagnosticReportSC
+//extends DiagnosticReport
    with DiagnosticReport.identifierNel
    with DiagnosticReport.subject[Patient,Required]
    with DiagnosticReport.specimenNel[TumorSpecimenProfile]

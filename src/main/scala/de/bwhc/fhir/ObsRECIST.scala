@@ -16,7 +16,7 @@ import de.bwhc.mtb.data.entry.dtos.RECIST
 
 
 sealed trait ObsRECISTProfile
-extends Observation
+extends ObservationSC
    with Observation.identifierNel
    with Observation.partOfNel[MedicationStatement]
    with Observation.effectiveDateTime[LocalDate,Required]

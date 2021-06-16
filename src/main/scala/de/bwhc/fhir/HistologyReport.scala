@@ -26,7 +26,8 @@ import de.bwhc.mtb.data.entry.dtos.{
 //-----------------------------------------------------------------------------
 
 abstract class ObsTumorMorphologyProfile
-extends Observation
+//extends Observation
+extends ObservationSC
    with Observation.id[Required]
    with Observation.subject[Patient,Required]
    with Observation.specimen[Required]
@@ -71,20 +72,13 @@ object ObsTumorMorphology
 
 
 trait HistologyReportProfile
-extends DiagnosticReport
+//extends DiagnosticReport
+extends DiagnosticReportSC
    with DiagnosticReport.identifierNel
    with DiagnosticReport.subject[Patient,Required]
    with DiagnosticReport.specimenNel[TumorSpecimenProfile]
    with DiagnosticReport.issued[LocalDate,Optional]
    with DiagnosticReport.result[Observation,Required]
-/*
-   with DiagnosticReport.contained[
-     Product2[
-       Option[ObsTumorMorphologyProfile],
-       Option[ObsTumorCellContentProfile]
-     ]
-   ]
-*/
    with DiagnosticReport.contained[
      ContainedResources {
        val tumorMorphology: Option[ObsTumorMorphologyProfile]
@@ -101,12 +95,6 @@ final case class HistologyReport
   subject: LogicalReference[MTBPatient],
   specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
   result: List[LiteralReference[Observation]],
-/*
-  contained: (
-    Option[ObsTumorMorphology],
-    Option[ObsTumorCellContent]
-  )
-*/
   contained: HistologyReport.Results
 )
 extends HistologyReportProfile

@@ -20,7 +20,7 @@ import CodingSystems._
 
 
 trait ObsECOGProfile
-extends Observation
+extends ObservationSC
    with Observation.identifierNel
    with Observation.effectiveDateTime[LocalDate,Optional]
    with Observation.subject[MTBPatient,Required]

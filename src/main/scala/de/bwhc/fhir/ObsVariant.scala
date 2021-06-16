@@ -11,7 +11,7 @@ import org.hl7.fhir.r4.Observation._
 import play.api.libs.json.Json
 
 
-abstract class ObsVariant extends Observation
+abstract class ObsVariant extends ObservationSC
 
 object ObsVariant
 {
@@ -55,12 +55,12 @@ object ObsVariant
 
 
   final case class Chromosome(valueString: String)
-  extends Observation.ComponentElement
+  extends Observation.ComponentElementSC
      with Observation.Component.valueString[Required]
  
 
   final case class GeneStudied(valueCodeableConcept: BasicCodeableConcept[HGNC])
-  extends Observation.ComponentElement
+  extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
        CodeableConcept with CodeableConcept.codingNel[Coding[HGNC]],
        Required
@@ -68,7 +68,7 @@ object ObsVariant
  
 
   final case class FunctionalAnnotation(valueCodeableConcept: BasicCodeableConcept[SequenceOntology])
-  extends Observation.ComponentElement
+  extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
        CodeableConcept with CodeableConcept.codingNel[Coding[SequenceOntology]],
        Required
@@ -76,7 +76,7 @@ object ObsVariant
 
  
   final case class ExactStartEnd(valueRange: LBoundedRange)
-  extends Observation.ComponentElement
+  extends Observation.ComponentElementSC
      with Observation.Component.valueRange[LBoundedRange,Required]
 //  final case class ExactStartEnd(valueString: String)
 //  extends Observation.ComponentElement
@@ -84,17 +84,17 @@ object ObsVariant
  
  
   final case class RefAllele(valueString: String)
-  extends Observation.ComponentElement
+  extends Observation.ComponentElementSC
      with Observation.Component.valueString[Required]
  
  
   final case class AltAllele(valueString: String)
-  extends Observation.ComponentElement
+  extends Observation.ComponentElementSC
      with Observation.Component.valueString[Required]
  
  
   final case class AminoAcidChange(valueCodeableConcept: BasicCodeableConcept[HGVS])
-  extends Observation.ComponentElement
+  extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
        CodeableConcept with CodeableConcept.codingNel[Coding[HGVS]],
        Required
@@ -102,7 +102,7 @@ object ObsVariant
  
  
   final case class DNAChange(valueCodeableConcept: BasicCodeableConcept[HGVS])
-  extends Observation.ComponentElement
+  extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
        CodeableConcept with CodeableConcept.codingNel[Coding[HGVS]],
        Required
@@ -110,7 +110,7 @@ object ObsVariant
  
  
   final case class DbSNPId(valueCodeableConcept: BasicCodeableConcept[dbSNP])
-  extends Observation.ComponentElement
+  extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
        CodeableConcept with CodeableConcept.codingNel[Coding[dbSNP]],
        Required
@@ -118,12 +118,12 @@ object ObsVariant
  
  
   final case class SampleAllelicFrequency(valueQuantity: SimpleQuantity)
-  extends Observation.ComponentElement
+  extends Observation.ComponentElementSC
      with Observation.Component.valueQuantity[Quantity,Required]
  
  
   final case class AllelicReadDepth(valueQuantity: SimpleQuantity)
-  extends Observation.ComponentElement
+  extends Observation.ComponentElementSC
      with Observation.Component.valueQuantity[Quantity,Required]
 
  

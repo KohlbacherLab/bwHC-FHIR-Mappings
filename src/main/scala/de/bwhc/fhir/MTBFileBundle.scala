@@ -81,35 +81,9 @@ extends Bundle.Collection
 
 case class MTBFileBundle
 (
-  entry: MTBFileEntries
+  entry: MTBFileBundle.Entries
 )
 extends MTBFileBundleProfile
-
-final case class MTBFileEntries
-(
-  patient:                    EntryOf[MTBPatient],
-  episode:                    EntryOf[MTBEpisode],
-  consent:                    EntryOf[BwHCConsent],
-  diagnoses:                  List[EntryOf[Diagnosis]],
-  familyMemberDiagnoses:      List[EntryOf[FamilyMemberHistoryDTO]],
-  previousGLTherapies:        List[EntryOf[PreviousGuidelineTherapy]],
-  lastGLTherapy:              Option[EntryOf[LastGuidelineTherapy]],
-  ecogs:                      List[EntryOf[ObsECOG]],
-  specimens:                  List[EntryOf[TumorSpecimen]],
-  histology:                  List[EntryOf[HistologyReport]],
-  ngsReports:                 List[EntryOf[SomaticNGSReport]],
-  carePlans:                  List[EntryOf[MTBCarePlan]],
-  therapyRecommendations:     List[EntryOf[TherapyRecommendation]],
-  geneticCounsellingRequests: List[EntryOf[CounsellingRequest]],
-  rebiopsyRequests:           List[EntryOf[RebiopsyRequest]],
-  claims:                     List[EntryOf[ClaimDTO]],
-  claimResponses:             List[EntryOf[ClaimResponseDTO]],
-  molecularTherapies:         List[EntryOf[MolecularTherapyHistory]],
-  responses:                  List[EntryOf[ObsRECIST]]
-)
-extends Bundle.EntrySet
-//extends MTBFileEntriesProfile
-
 
 
 object MTBFileBundle
@@ -117,6 +91,32 @@ object MTBFileBundle
 
   import org.hl7.fhir.r4.json._
   import org.hl7.fhir.r4.json.backboneElements._
+
+
+  final case class Entries
+  (
+    patient:                    EntryOf[MTBPatient],
+    episode:                    EntryOf[MTBEpisode],
+    consent:                    EntryOf[BwHCConsent],
+    diagnoses:                  List[EntryOf[Diagnosis]],
+    familyMemberDiagnoses:      List[EntryOf[FamilyMemberHistoryDTO]],
+    previousGLTherapies:        List[EntryOf[PreviousGuidelineTherapy]],
+    lastGLTherapy:              Option[EntryOf[LastGuidelineTherapy]],
+    ecogs:                      List[EntryOf[ObsECOG]],
+    specimens:                  List[EntryOf[TumorSpecimen]],
+    histology:                  List[EntryOf[HistologyReport]],
+    ngsReports:                 List[EntryOf[SomaticNGSReport]],
+    carePlans:                  List[EntryOf[MTBCarePlan]],
+    therapyRecommendations:     List[EntryOf[TherapyRecommendation]],
+    geneticCounsellingRequests: List[EntryOf[CounsellingRequest]],
+    rebiopsyRequests:           List[EntryOf[RebiopsyRequest]],
+    claims:                     List[EntryOf[ClaimDTO]],
+    claimResponses:             List[EntryOf[ClaimResponseDTO]],
+    molecularTherapies:         List[EntryOf[MolecularTherapyHistory]],
+    responses:                  List[EntryOf[ObsRECIST]]
+  )
+  extends Bundle.EntrySet
+
 
   implicit val mtbFileBundleProfile =
     Meta.Profiles[MTBFileBundle]("http://bwhc.de/mtb-file")
