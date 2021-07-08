@@ -30,7 +30,6 @@ sealed trait GuidelineTherapyProfile
 extends MedicationStatement
    with MedicationStatement.identifierNel
    with MedicationStatement.extension[TherapyLine,Optional]
-//   with MedicationStatement.extensions[Product1[TherapyLine],Optional]
    with MedicationStatement.contained[ContainedResources { val medication: MTBMedicationProfile }]
    with MedicationStatement.subject[Patient,Required]
    with MedicationStatement.reasonReferenceNel
@@ -41,7 +40,8 @@ extends GuidelineTherapyProfile
    with MedicationStatement.effectivePeriod[OpenEndPeriod[LocalDate],Optional]
    with MedicationStatement.statusReason[
      CodeableConcept
-       with CodeableConcept.codingNel[Coding[GuidelineTherapy.StopReason.Value]],
+       with CodeableConcept.codingNel[CodingStatic[GuidelineTherapy.StopReason.Value]],
+//       with CodeableConcept.codingNel[Coding[GuidelineTherapy.StopReason.Value]],
      Optional
    ]
 
@@ -72,7 +72,7 @@ final case class LastGuidelineTherapy
 //  extension: Option[Tuple1[TherapyLine]],
   contained: ContainedMedication,
   status: MedicationStatement.Status.Value,
-  statusReason: Optional[List[BasicCodeableConcept[GuidelineTherapy.StopReason.Value]]],
+  statusReason: Optional[List[CodeableConceptStatic[GuidelineTherapy.StopReason.Value]]],
   subject: LogicalReference[MTBPatient],
   reasonReference: NonEmptyList[LogicalReference[Condition]],
   effectivePeriod: Option[OpenEndPeriod[LocalDate]],
@@ -101,7 +101,7 @@ object LastGuidelineTherapy
 
 
   implicit val stopReasonSystem =
-    Coding.System[GuidelineTherapy.StopReason.Value]("bwhc-mtb-guidelinetherapy-stopreason")
+    CodingSystem[GuidelineTherapy.StopReason.Value]("bwhc-mtb-guidelinetherapy-stopreason")
 
     
   import json.contained._

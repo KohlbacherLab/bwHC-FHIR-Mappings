@@ -25,7 +25,7 @@ extends ObservationSC
    with Observation.effectiveDateTime[LocalDate,Optional]
    with Observation.subject[MTBPatient,Required]
    with Observation.valueCodeableConcept[
-     CodeableConcept with CodeableConcept.codingNel[Coding[ECOG.Value]],
+     CodeableConcept with CodeableConcept.codingNel[CodingStatic[ECOG.Value]],
      Required
    ]
 
@@ -36,7 +36,7 @@ case class ObsECOG
   status: Observation.Status.Value,
   effectiveDateTime: Option[LocalDate],
   subject: LogicalReference[MTBPatient],
-  valueCodeableConcept: BasicCodeableConcept[ECOG.Value]
+  valueCodeableConcept: CodeableConceptStatic[ECOG.Value]
 )
 extends ObsECOGProfile
 

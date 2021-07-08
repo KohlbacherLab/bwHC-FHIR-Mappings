@@ -52,24 +52,24 @@ object Mappings
 
 
 
-  implicit def codingToFHIR[T: org.hl7.fhir.r4.Coding.System]: dtos.Coding[T] => BasicCoding[T] = 
+  implicit def codingToFHIR[T: org.hl7.fhir.r4.CodingSystem]: dtos.Coding[T] => CodingStatic[T] = 
     coding =>
-      BasicCoding[T](
+      CodingStatic[T](
         coding.code.toString,
         coding.display,
         coding.version
       )
 
 
-  implicit val icd10CodingToFHIR: dtos.Coding[dtos.ICD10GM] => BasicCoding[dtos.ICD10GM] = 
+  implicit val icd10CodingToFHIR: dtos.Coding[dtos.ICD10GM] => CodingStatic[dtos.ICD10GM] = 
     coding =>
-      BasicCoding[dtos.ICD10GM](
+      CodingStatic[dtos.ICD10GM](
         coding.code.value,
         coding.display,
         coding.version
       )
 
-  implicit val icd10CodingFromFHIR: BasicCoding[dtos.ICD10GM] => dtos.Coding[dtos.ICD10GM] = 
+  implicit val icd10CodingFromFHIR: CodingStatic[dtos.ICD10GM] => dtos.Coding[dtos.ICD10GM] = 
     coding =>
       dtos.Coding[dtos.ICD10GM](
         dtos.ICD10GM(coding.code),
@@ -207,7 +207,7 @@ object Mappings
         NonEmptyList.one(c.id),
         c.status,
         Reference[MTBPatient](c.patient),
-        BasicCodeableConcept(BasicCoding(Consent.Scope.Research)) 
+        CodeableConceptStatic(CodingStatic(Consent.Scope.Research)) 
       )
 
   implicit val consentFromFHIR: BwHCConsent => dtos.Consent =
@@ -242,11 +242,11 @@ object Mappings
         NonEmptyList.one(diag.id),
         LogicalReference[MTBPatient](diag.patient),
         diag.recordedOn,
-        diag.icd10.map(icd => BasicCodeableConcept(icd.mapTo[BasicCoding[dtos.ICD10GM]])),
+        diag.icd10.map(icd => CodeableConceptStatic(icd.mapTo[CodingStatic[dtos.ICD10GM]])),
         diag.icdO3T.map(c =>
           List(
-            BasicCodeableConcept(              
-              BasicCoding[dtos.ICDO3T](
+            CodeableConceptStatic(              
+              CodingStatic[dtos.ICDO3T](
                 c.code.value,
                 c.display,
                 c.version
@@ -260,8 +260,8 @@ object Mappings
             sts.map(st =>
               Diagnosis.Stage(
                 Some(List(Diagnosis.Stage.Date(st.date))),
-                BasicCodeableConcept( 
-                  BasicCoding[dtos.Diagnosis.Status.Value](st.status.toString, None)
+                CodeableConceptStatic( 
+                  CodingStatic[dtos.Diagnosis.Status.Value](st.status.toString, None, None)
                 )
               ) 
             )
@@ -270,8 +270,8 @@ object Mappings
           diag.whoGrade.map(who =>
             Diagnosis.Stage(
               diag.recordedOn.map(d => List(Diagnosis.Stage.Date(d))),
-              BasicCodeableConcept(
-                BasicCoding[dtos.WHOGrade.Value](who.code.toString,who.display)
+              CodeableConceptStatic(
+                CodingStatic[dtos.WHOGrade.Value](who.code.toString,who.display, None)
               )
             )
           )
@@ -327,7 +327,6 @@ object Mappings
               dtos.Diagnosis.StatusOnDate( 
                 dtos.Diagnosis.Status.withName(st.summary.coding.head.code),
                 st.extension.get.head.value
-//                st.extension.get._1.value
               )
             )
         ).filterNot(_.isEmpty),
@@ -365,7 +364,7 @@ object Mappings
           NonEmptyList.one(diag.id),
           FamilyMemberHistory.Status.HealthUnknown,
           LogicalReference[MTBPatient](diag.patient),
-          BasicCodeableConcept(BasicCoding(diag.relationship.code))
+          CodeableConceptStatic(CodingStatic(diag.relationship.code))
         )
 
   implicit val familyMemberDiagnosisFromFHIR: 
@@ -403,10 +402,11 @@ object Mappings
         Observation.Status.Final,
         ecog.effectiveDate,
         LogicalReference[MTBPatient](ecog.patient),
-        BasicCodeableConcept(
-          BasicCoding[dtos.ECOG.Value](
+        CodeableConceptStatic(
+          CodingStatic[dtos.ECOG.Value](
             ecog.value.code.toString,
             dtos.ValueSet[dtos.ECOG.Value].displayOf(ecog.value.code),
+            None
           )
         ) 
       )
@@ -433,18 +433,28 @@ object Mappings
 
   import de.bwhc.mtb.data.entry.dtos.{Medication => ATC}
 
+  implicit val medicationSystemToFHIR =
+    Map[dtos.Medication.System.Value,String](
+      dtos.Medication.System.ATC          -> "http://fhir.de/CodeSystem/dimdi/atc",
+      dtos.Medication.System.Unregistered -> "Unregistered" 
+    )
+  
+  implicit val medicationSystemFromFHIR = medicationSystemToFHIR.invert
 
-  implicit val medicationSetToFHIR: List[dtos.Coding[ATC]] => MTBMedication = {
+
+  implicit val medicationSetToFHIR: List[dtos.Medication.Coding] => MTBMedication = {
     meds =>
       val id = meds.map(_.code.value).reduceLeftOption(_ + "-" + _).getOrElse(java.util.UUID.randomUUID.toString)
       MTBMedication(
         id,
         meds.map(m =>
           MTBMedication.Ingredient(
-            BasicCodeableConcept(
-              BasicCoding[ATC](
+            CodeableConceptDynamic(
+              CodingDynamic(
                 m.code.value,
                 m.display,
+                m.system.mapTo[String],
+                None
               )
             )
           )
@@ -452,49 +462,19 @@ object Mappings
       )
   }
 
-  implicit val medicationListFromFHIR: MTBMedication => List[dtos.Coding[ATC]] = {
+  implicit val medicationListFromFHIR: MTBMedication => List[dtos.Medication.Coding] = {
     m =>
       m.ingredient
         .map(_.itemCodeableConcept.coding.head)
         .map(c =>
-          dtos.Coding(
-            dtos.Medication(c.code),
-            c.display
+          dtos.Medication.Coding(
+            dtos.Medication.Code(c.code),
+            c.system.mapTo[dtos.Medication.System.Value],
+            c.display,
+            None
           )
         )
   }
-
-/*
-  implicit val medicationSetToFHIR: NonEmptyList[dtos.Coding[ATC]] => MTBMedication = {
-    meds =>
-      val id = meds.map(_.code.value).reduceLeft(_ + "-" + _)
-      MTBMedication(
-        id,
-        meds.map(m =>
-          MTBMedication.Ingredient(
-            BasicCodeableConcept(
-              BasicCoding[ATC](
-                m.code.value,
-                m.display,
-              )
-            )
-          )
-        )
-      )
-  }
-
-  implicit val medicationListFromFHIR: MTBMedication => NonEmptyList[dtos.Coding[ATC]] = {
-    m =>
-      m.ingredient
-        .map(_.itemCodeableConcept.coding.head)
-        .map(c =>
-          dtos.Coding(
-            dtos.Medication(c.code),
-            c.display
-          )
-        )
-  }
-*/
 
 
   //---------------------------------------------------------------------------
@@ -533,7 +513,7 @@ object Mappings
       th.subject.identifier,
         th.reasonReference.head.identifier,
         th.extension.map { l => dtos.TherapyLine(l.head.value) },
-        Some(th.contained.medication.mapTo[List[dtos.Coding[ATC]]])
+        Some(th.contained.medication.mapTo[List[dtos.Medication.Coding]])
       )
 
   }
@@ -553,7 +533,7 @@ object Mappings
         th.therapyLine.map(l => List(TherapyLine(PositiveInt(l.value)))),
         ContainedMedication(medication),
         MedicationStatement.Status.Stopped,
-        th.reasonStopped.map(r => List(BasicCodeableConcept(BasicCoding(r.code.toString,None)))),
+        th.reasonStopped.map(r => List(CodeableConceptStatic(CodingStatic(r.code.toString,None,None)))),
         LogicalReference[MTBPatient](th.patient),
         NonEmptyList.one(LogicalReference[Condition](th.diagnosis)),
         th.period.map(_.mapTo[OpenEndPeriod[LocalDate]]),
@@ -576,7 +556,7 @@ object Mappings
         th.reasonReference.head.identifier,
         th.extension.map { l => dtos.TherapyLine(l.head.value.value) },
         th.period.map(_.mapTo[dtos.OpenEndPeriod[LocalDate]]),
-        Some(th.contained.medication.mapTo[List[dtos.Coding[ATC]]]),
+        Some(th.contained.medication.mapTo[List[dtos.Medication.Coding]]),
         th.statusReason.flatMap(_.headOption)
           .map(cc =>
             dtos.Coding[StopReason.Value](
@@ -606,17 +586,17 @@ object Mappings
       TumorSpecimen(
         NonEmptyList.one(sp.id),
         NonEmptyList.one(
-          SampleDiagnosis(BasicCodeableConcept(sp.icd10.mapTo[BasicCoding[dtos.ICD10GM]]))
+          SampleDiagnosis(CodeableConceptStatic(sp.icd10.mapTo[CodingStatic[dtos.ICD10GM]]))
         ),
         Reference[MTBPatient](sp.patient),
         sp.collection.map(c => 
           TumorSpecimen.Collection(
             c.date,
-            BasicCodeableConcept(BasicCoding(c.localization,None)),
-            BasicCodeableConcept(BasicCoding(c.method,None))
+            CodeableConceptStatic(CodingStatic(c.localization,None)),
+            CodeableConceptStatic(CodingStatic(c.method,None))
           )
         ),
-        sp.`type`.map(t => List(BasicCodeableConcept(BasicCoding(t.toString,None))))
+        sp.`type`.map(t => List(CodeableConceptStatic(CodingStatic(t.toString,None,None))))
       )
   }
 
@@ -662,7 +642,7 @@ object Mappings
         Observation.Status.Final,
         subject,
         LogicalReference[TumorSpecimen](tc.specimen),
-        BasicCodeableConcept(BasicCoding[dtos.TumorCellContent.Method.Value](tc.method.toString,None)),
+        CodeableConceptStatic(CodingStatic[dtos.TumorCellContent.Method.Value](tc.method.toString,None,None)),
         SimpleQuantity(tc.value)
       )
   }
@@ -686,8 +666,8 @@ object Mappings
         Observation.Status.Final,
         LogicalReference[MTBPatient](tm.patient),
         LogicalReference[TumorSpecimen](tm.specimen),
-        BasicCodeableConcept(
-          BasicCoding(
+        CodeableConceptStatic(
+          CodingStatic(
             tm.value.code.value,
             tm.value.display,
             tm.value.version
@@ -713,7 +693,6 @@ object Mappings
         NonEmptyList.one(LogicalReference[TumorSpecimen](histoReport.specimen)),
         (tumorContent.map(Reference.contained(_)) ++
            morphology.map(Reference.contained(_))).toList,
-//        (
         HistologyReport.Results(
           morphology,
           tumorContent
@@ -812,7 +791,7 @@ object Mappings
           Chromosome(snv.chromosome.value),
           NonEmptyList.one(
             GeneStudied(
-              BasicCodeableConcept(BasicCoding[HGNC](snv.gene.code.value,snv.gene.display))
+              CodeableConceptStatic(CodingStatic[HGNC](snv.gene.code.value,snv.gene.display,None))
             )
           ),
           ExactStartEnd(
@@ -821,12 +800,12 @@ object Mappings
           RefAllele(snv.refAllele.value),
           AltAllele(snv.altAllele.value),
           DNAChange(
-            BasicCodeableConcept(BasicCoding[HGVS](snv.dnaChange.code.value,None))
+            CodeableConceptStatic(CodingStatic[HGVS](snv.dnaChange.code.value,None,None))
           ),
           AminoAcidChange(
-            BasicCodeableConcept(BasicCoding[HGVS](snv.aminoAcidChange.code.value,None))
+            CodeableConceptStatic(CodingStatic[HGVS](snv.aminoAcidChange.code.value,None,None))
           ),
-          snv.dbSNPId.map(v => DbSNPId(BasicCodeableConcept(BasicCoding[dbSNP](v.value,None)))),
+          snv.dbSNPId.map(v => DbSNPId(CodeableConceptStatic(CodingStatic[dbSNP](v.value,None,None)))),
           SampleAllelicFrequency(
             SimpleQuantity(snv.allelicFrequency.value)
           ),
@@ -835,8 +814,8 @@ object Mappings
           )
         ),
         NonEmptyList.one(
-          BasicCodeableConcept(
-            BasicCoding[ClinVar](snv.interpretation.code.value,None)
+          CodeableConceptStatic(
+            CodingStatic[ClinVar](snv.interpretation.code.value,None,None)
           ),
         )
       )
@@ -863,7 +842,7 @@ object Mappings
         ngsReport.issueDate,
         DiagnosticReport.Status.Final,
         SomaticNGSReport.Extensions(
-          ExtSequencingType(BasicCoding[dtos.SomaticNGSReport.SequencingType](ngsReport.sequencingType.value)),
+          ExtSequencingType(CodingStatic[dtos.SomaticNGSReport.SequencingType](ngsReport.sequencingType.value,None,None)),
           ngsReport.metadata.map {
            case dtos.SomaticNGSReport.MetaData(kitType,manufacturer,seq,ref,pipeline) =>
               ExtMetaData(
@@ -934,14 +913,13 @@ object Mappings
           rec.levelOfEvidence.map( loe =>
             List(
               LoE(
-                LoE.Grade(BasicCoding(loe.grading.code,None)),
+                LoE.Grade(CodingStatic(loe.grading.code,None)),
                 loe.addendums.getOrElse(Set.empty)
-                  .map(add => LoE.Addendum(BasicCoding(add.code,None)))
+                  .map(add => LoE.Addendum(CodingStatic(add.code,None)))
               )
             )
           ),
           ContainedMedication(med),
-//          Tuple1(med),
           rec.priority.map(_.mapTo[MedicationRequest.Priority.Value]),
           MedicationRequest.Status.Unknown,          
           MedicationRequest.Intent.Proposal,
@@ -965,7 +943,7 @@ object Mappings
           rec.subject.identifier,
           rec.reasonReference.head.identifier,
           rec.authoredOn,
-          Some(rec.contained.medication.mapTo[List[dtos.Coding[ATC]]]),
+          Some(rec.contained.medication.mapTo[List[dtos.Medication.Coding]]),
           rec.priority.map(_.mapTo[dtos.TherapyRecommendation.Priority.Value]),
           rec.extension.map { l =>
             val loe = l.head
@@ -1093,9 +1071,9 @@ object Mappings
       ClaimDTO(
         NonEmptyList.one(Identifier(claim.id.value)),
         claim.issuedOn,
-        BasicCodeableConcept(BasicCoding(Claim.Type.Institutional)),
+        CodeableConceptStatic(CodingStatic(Claim.Type.Institutional)),
         Claim.Use.Claim,
-        BasicCodeableConcept(BasicCoding(ProcessPriority.Normal)),
+        CodeableConceptStatic(CodingStatic(ProcessPriority.Normal)),
         Claim.Status.Draft,
         LogicalReference[TherapyRecommendation](claim.therapy),
         LogicalReference[Patient](claim.patient),
@@ -1124,7 +1102,7 @@ object Mappings
       ClaimResponseDTO(
         NonEmptyList.one(Identifier(cr.id.value)),
         cr.issuedOn,
-        BasicCodeableConcept(BasicCoding(Claim.Type.Institutional)),
+        CodeableConceptStatic(CodingStatic(Claim.Type.Institutional)),
         Claim.Use.Claim,
         Claim.Status.Draft,
         LogicalReference[Patient](cr.patient),
@@ -1186,7 +1164,7 @@ object Mappings
             subject,
             Reference[MTBMedication]("DUMMY"),
             NonEmptyList.one(
-              BasicCodeableConcept(BasicCoding(th.notDoneReason.code.toString,None))
+              CodeableConceptStatic(CodingStatic(th.notDoneReason.code.toString,None,None))
             ),
             note
           )
@@ -1206,7 +1184,7 @@ object Mappings
             ClosedPeriod(th.period.start,th.period.end),
             th.dosage.map(_.mapTo[DosageDensity]).map(List(_)),
             NonEmptyList.one(
-              BasicCodeableConcept(BasicCoding(th.reasonStopped.code.toString,None))
+              CodeableConceptStatic(CodingStatic(th.reasonStopped.code.toString,None,None))
             ),
             note
           )
@@ -1291,7 +1269,7 @@ object Mappings
             molTh.dateAsserted,
             th.basedOn.head.identifier,
             dtos.ClosedPeriod(th.effectivePeriod.start,th.effectivePeriod.end),
-            Some(th.contained.medication.mapTo[List[dtos.Coding[ATC]]]),
+            Some(th.contained.medication.mapTo[List[dtos.Medication.Coding]]),
             th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
             dtos.Coding(StopReason.withName(th.statusReason.head.coding.head.code),None),
             note
@@ -1305,7 +1283,7 @@ object Mappings
             molTh.dateAsserted,
             th.basedOn.head.identifier,
             dtos.ClosedPeriod(th.effectivePeriod.start,th.effectivePeriod.end),
-            Some(th.contained.medication.mapTo[List[dtos.Coding[ATC]]]),
+            Some(th.contained.medication.mapTo[List[dtos.Medication.Coding]]),
             th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
             note
           )
@@ -1318,7 +1296,7 @@ object Mappings
             molTh.dateAsserted,
             th.basedOn.head.identifier,
             dtos.OpenEndPeriod(th.effectivePeriod.start),
-            Some(th.contained.medication.mapTo[List[dtos.Coding[ATC]]]),
+            Some(th.contained.medication.mapTo[List[dtos.Medication.Coding]]),
             th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
             note
           )
@@ -1356,7 +1334,7 @@ object Mappings
         NonEmptyList.one(LogicalReference[MedicationStatement](resp.therapy)),
         resp.effectiveDate,
         LogicalReference[MTBPatient](resp.patient),
-        BasicCodeableConcept(BasicCoding(resp.value.code,None)) 
+        CodeableConceptStatic(CodingStatic(resp.value.code,None)) 
       )
   }
 
@@ -1393,6 +1371,9 @@ object Mappings
     mtbfile =>
 
       implicit def toBundleEntry[R <: Resource](r: R): EntryOf[R] = EntryOf(r)
+//      implicit def toBundleEntryIds[R <: DomainResource { val identifier: NonEmptyList[Identifier]}](r: R): EntryOf[R] = EntryOf(r)
+
+//      implicit def toBundleEntryId[R <: Resource { val identifier: Identifier}](r: R): EntryOf[R] = EntryOf(r)
 
       implicit val pat = mtbfile.patient
       
@@ -1416,6 +1397,7 @@ object Mappings
           mtbfile.rebiopsyRequests.getOrElse(List.empty).map(_.mapTo[RebiopsyRequest]),
           mtbfile.claims.getOrElse(List.empty).map(_.mapTo[ClaimDTO]),
           mtbfile.claimResponses.getOrElse(List.empty).map(_.mapTo[ClaimResponseDTO]),
+//          mtbfile.molecularTherapies.getOrElse(List.empty).map(_.mapTo[MolecularTherapyHistory]).map(EntryOf(_,None)),
           mtbfile.molecularTherapies.getOrElse(List.empty).map(_.mapTo[MolecularTherapyHistory]),
           mtbfile.responses.getOrElse(List.empty).map(_.mapTo[ObsRECIST])
         )

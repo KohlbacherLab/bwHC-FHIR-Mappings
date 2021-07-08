@@ -30,7 +30,8 @@ extends ObservationSC
    with Observation.specimen[Required]
    with Observation.method[
      CodeableConcept
-       with CodeableConcept.codingNel[Coding[TumorCellContent.Method.Value]],
+       with CodeableConcept.codingNel[CodingStatic[TumorCellContent.Method.Value]],
+//       with CodeableConcept.codingNel[Coding[TumorCellContent.Method.Value]],
      Required
    ]
    with Observation.valueQuantity[Quantity,Required]
@@ -42,7 +43,8 @@ case class ObsTumorCellContent
   status: Observation.Status.Value,
   subject: LogicalReference[MTBPatient],
   specimen: LogicalReference[TumorSpecimen],
-  method: BasicCodeableConcept[TumorCellContent.Method.Value],
+  method: CodeableConceptStatic[TumorCellContent.Method.Value],
+//  method: BasicCodeableConcept[TumorCellContent.Method.Value],
   valueQuantity: SimpleQuantity
 )
 extends ObsTumorCellContentProfile
@@ -57,7 +59,7 @@ object ObsTumorCellContent
     Code[ObsTumorCellContent](LOINC("TODO: LOINC tumor-content", Some("Tumor Content")))
 
   implicit val tcMethodSystem =
-    Coding.System[TumorCellContent.Method.Value]("tumor-content-method")
+    CodingSystem[TumorCellContent.Method.Value]("tumor-content-method")
     
   implicit val format = Json.format[ObsTumorCellContent]
   
@@ -173,8 +175,10 @@ object ObsBRCAness
 //-----------------------------------------------------------------------------
 
 final case class ExtSequencingType(
-  value: BasicCoding[SequencingType]
-) extends SimpleExtension[BasicCoding[SequencingType]]
+  value: CodingStatic[SequencingType]
+//  value: BasicCoding[SequencingType]
+) extends SimpleExtension[CodingStatic[SequencingType]]
+//) extends SimpleExtension[BasicCoding[SequencingType]]
 
 object ExtSequencingType
 {

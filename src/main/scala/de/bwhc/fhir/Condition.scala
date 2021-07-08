@@ -27,11 +27,13 @@ extends Condition
    with Condition.recordedDate[LocalDate,Optional]
    with Condition.subject[Patient,Required]
    with Condition.code[
-     CodeableConcept with CodeableConcept.codingNel[Coding[ICD10GM]],
+     CodeableConcept with CodeableConcept.codingNel[CodingStatic[ICD10GM]],
+//     CodeableConcept with CodeableConcept.codingNel[Coding[ICD10GM]],
      Optional
    ]
    with Condition.bodySite[
-     CodeableConcept with CodeableConcept.codingNel[Coding[ICDO3T]],
+     CodeableConcept with CodeableConcept.codingNel[CodingStatic[ICDO3T]],
+//     CodeableConcept with CodeableConcept.codingNel[Coding[ICDO3T]],
      Optional
    ]
    with Condition.stages[
@@ -39,18 +41,17 @@ extends Condition
        List[
          Condition.StageElement
            with Condition.Stage.summary[
-             CodeableConcept with CodeableConcept.codingNel[Coding[dtos.Diagnosis.Status.Value]]
+             CodeableConcept with CodeableConcept.codingNel[CodingStatic[dtos.Diagnosis.Status.Value]]
+//             CodeableConcept with CodeableConcept.codingNel[Coding[dtos.Diagnosis.Status.Value]]
            ]
            with Condition.Stage.extension[SimpleExtension[LocalDate],Optional]
-//           with Condition.Stage.extensions[Product1[SimpleExtension[LocalDate]],Optional]
        ],
        Option[
          Condition.StageElement
          with Condition.Stage.summary[
-           CodeableConcept with CodeableConcept.codingNel[Coding[WHOGrade.Value]]
+           CodeableConcept with CodeableConcept.codingNel[CodingStatic[WHOGrade.Value]]
          ]
          with Condition.Stage.extension[SimpleExtension[LocalDate],Optional]
-//         with Condition.Stage.extensions[Product1[SimpleExtension[LocalDate]],Optional]
        ]
      ],
      Required
@@ -66,8 +67,10 @@ case class Diagnosis
   identifier: NonEmptyList[Identifier],
   subject: LogicalReference[MTBPatient],
   recordedDate: Option[LocalDate],
-  code: Option[BasicCodeableConcept[ICD10GM]],
-  bodySite: Option[List[BasicCodeableConcept[ICDO3T]]],
+  code: Option[CodeableConceptStatic[ICD10GM]],
+  bodySite: Option[List[CodeableConceptStatic[ICDO3T]]],
+//  code: Option[BasicCodeableConcept[ICD10GM]],
+//  bodySite: Option[List[BasicCodeableConcept[ICDO3T]]],
   stage: (
            List[Diagnosis.Stage[dtos.Diagnosis.Status.Value]],
            Option[Diagnosis.Stage[WHOGrade.Value]]
@@ -95,13 +98,13 @@ object Diagnosis
 
   case class Stage[T](
     extension: Option[List[Stage.Date]],
-//    extension: Option[Tuple1[Stage.Date]],
-    summary: BasicCodeableConcept[T]
+    summary: CodeableConceptStatic[T]
+//    summary: BasicCodeableConcept[T]
   )
   extends Condition.StageElement
-     with Condition.Stage.summary[BasicCodeableConcept[T]]
+     with Condition.Stage.summary[CodeableConceptStatic[T]]
+//     with Condition.Stage.summary[BasicCodeableConcept[T]]
      with Condition.Stage.extension[Stage.Date,Optional]
-//     with Condition.Stage.extensions[Tuple1[Stage.Date],Optional]
 
 
   case class HistologyEvidence(
@@ -116,7 +119,7 @@ object Diagnosis
     
   implicit val formatEvidence = Json.format[HistologyEvidence]
 
-  implicit def formatStage[T: Coding.System] = Json.format[Stage[T]]
+  implicit def formatStage[T: CodingSystem] = Json.format[Stage[T]]
 
   implicit val formatDiagnosis = Json.format[Diagnosis]
   

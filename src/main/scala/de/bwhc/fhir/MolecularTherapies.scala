@@ -81,10 +81,10 @@ object MolecularTherapy
   object Systems
   {
     implicit val stopReasonSystem =
-      Coding.System[StopReason.Value]("bwhc-mtb-molecular-therapy-stopreason")
+      CodingSystem[StopReason.Value]("bwhc-mtb-molecular-therapy-stopreason")
 
     implicit val notDoneReasonSystem =
-      Coding.System[NotDoneReason.Value]("bwhc-mtb-molecular-therapy-notdonereason")
+      CodingSystem[NotDoneReason.Value]("bwhc-mtb-molecular-therapy-notdonereason")
   }
 
   import Systems._
@@ -131,14 +131,14 @@ final case class NotTakenMolecularTherapy
   basedOn: NonEmptyList[LogicalReference[TherapyRecommendation]],
   dateAsserted: LocalDate,
   subject: LogicalReference[MTBPatient],
-//  reasonReference: NonEmptyList[LogicalReference[Diagnosis]],
   medicationReference: LiteralReference[MTBMedication],
-  statusReason: NonEmptyList[BasicCodeableConcept[NotDoneReason.Value]],
+  statusReason: NonEmptyList[CodeableConceptStatic[NotDoneReason.Value]],
+//  statusReason: NonEmptyList[BasicCodeableConcept[NotDoneReason.Value]],
   note: Option[List[Note]],
 )
 extends MolecularTherapy
    with MedicationStatement.statusReasonNel[
-     CodeableConcept with CodeableConcept.codingNel[Coding[NotDoneReason.Value]]
+     CodeableConcept with CodeableConcept.codingNel[CodingStatic[NotDoneReason.Value]]
    ]
 {
   val status: MedicationStatement.Status.Value = MedicationStatement.Status.NotTaken
@@ -155,7 +155,8 @@ final case class StoppedMolecularTherapy
   medicationReference: LiteralReference[MTBMedication],
   effectivePeriod: ClosedPeriod[LocalDate],
   dosage: Option[List[DosageDensity]],
-  statusReason: NonEmptyList[BasicCodeableConcept[StopReason.Value]],
+  statusReason: NonEmptyList[CodeableConceptStatic[StopReason.Value]],
+//  statusReason: NonEmptyList[BasicCodeableConcept[StopReason.Value]],
   note: Option[List[Note]],
 )
 extends MolecularTherapy
@@ -163,7 +164,7 @@ extends MolecularTherapy
    with MedicationStatement.effectivePeriod[ClosedPeriod[LocalDate],Required]
    with MedicationStatement.dosage[DosageDensityProfile,Optional]
    with MedicationStatement.statusReasonNel[
-     CodeableConcept with CodeableConcept.codingNel[Coding[StopReason.Value]]
+     CodeableConcept with CodeableConcept.codingNel[CodingStatic[StopReason.Value]]
    ]
 {
   val status: MedicationStatement.Status.Value = MedicationStatement.Status.Stopped

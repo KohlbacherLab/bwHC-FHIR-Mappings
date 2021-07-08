@@ -36,21 +36,27 @@ object LoE
   import json.extensions._
 
   implicit val loeGrading =
-    Coding.System[LevelOfEvidence.Grading.Value]("mtb-level-of-evidence:grading")
+    CodingSystem[LevelOfEvidence.Grading.Value]("mtb-level-of-evidence:grading")
+//    Coding.System[LevelOfEvidence.Grading.Value]("mtb-level-of-evidence:grading")
 
   implicit val loeAdd =
-    Coding.System[LevelOfEvidence.Addendum.Value]("mtb-level-of-evidence:addendum")
+    CodingSystem[LevelOfEvidence.Addendum.Value]("mtb-level-of-evidence:addendum")
+//    Coding.System[LevelOfEvidence.Addendum.Value]("mtb-level-of-evidence:addendum")
 
 
   final case class Grade(
-    value: BasicCoding[LevelOfEvidence.Grading.Value]
+    value: CodingStatic[LevelOfEvidence.Grading.Value]
+//    value: BasicCoding[LevelOfEvidence.Grading.Value]
   )
-  extends SimpleExtension[BasicCoding[LevelOfEvidence.Grading.Value]]
+  extends SimpleExtension[CodingStatic[LevelOfEvidence.Grading.Value]]
+//  extends SimpleExtension[BasicCoding[LevelOfEvidence.Grading.Value]]
 
   final case class Addendum(
-    value: BasicCoding[LevelOfEvidence.Addendum.Value]
+    value: CodingStatic[LevelOfEvidence.Addendum.Value]
+//    value: BasicCoding[LevelOfEvidence.Addendum.Value]
   )
-  extends SimpleExtension[BasicCoding[LevelOfEvidence.Addendum.Value]]
+  extends SimpleExtension[CodingStatic[LevelOfEvidence.Addendum.Value]]
+//  extends SimpleExtension[BasicCoding[LevelOfEvidence.Addendum.Value]]
 
   object Grade
   {

@@ -13,10 +13,10 @@ import org.hl7.fhir.r4.json._
 
 import play.api.libs.json.Json
 
-import de.bwhc.mtb.data.entry.dtos.{Medication => ATC}
+//import de.bwhc.mtb.data.entry.dtos.{Medication => ATC}
 
 
-import CodingSystems._
+//import CodingSystems._
 
 
 trait MTBMedicationProfile
@@ -26,15 +26,11 @@ extends Medication
      Medication.IngredientElement[CodeableConcept],
      Required
    ]
-//   with Medication.ingredientNel[
-//     Medication.IngredientElement[CodeableConcept]
-//   ]
 
 
 final case class MTBMedication
 (
   id: String,
-//  ingredient: NonEmptyList[MTBMedication.Ingredient]
   ingredient: List[MTBMedication.Ingredient]
 )
 extends MTBMedicationProfile
@@ -49,10 +45,12 @@ object MTBMedication
     
   final case class Ingredient
   (
-    itemCodeableConcept: BasicCodeableConcept[ATC]
+    itemCodeableConcept: CodeableConceptDynamic
+//    itemCodeableConcept: BasicCodeableConcept[ATC]
   )
   extends Medication.IngredientElement[CodeableConcept]
-     with Medication.Ingredient.itemCodeableConcept[BasicCodeableConcept[ATC]]
+     with Medication.Ingredient.itemCodeableConcept[CodeableConceptDynamic]
+//     with Medication.Ingredient.itemCodeableConcept[BasicCodeableConcept[ATC]]
 
 
   implicit val formatIngredient = Json.format[Ingredient]

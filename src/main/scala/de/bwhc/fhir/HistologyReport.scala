@@ -32,7 +32,8 @@ extends ObservationSC
    with Observation.subject[Patient,Required]
    with Observation.specimen[Required]
    with Observation.valueCodeableConcept[
-     CodeableConcept with CodeableConcept.codingNel[Coding[ICDO3M]],
+     CodeableConcept with CodeableConcept.codingNel[CodingStatic[ICDO3M]],
+//     CodeableConcept with CodeableConcept.codingNel[Coding[ICDO3M]],
      Required
    ]
    with Observation.note[Annotation,Optional]
@@ -44,7 +45,8 @@ case class ObsTumorMorphology
   status: Observation.Status.Value,
   subject: LogicalReference[Patient],
   specimen: LogicalReference[Specimen],
-  valueCodeableConcept: BasicCodeableConcept[ICDO3M],
+  valueCodeableConcept: CodeableConceptStatic[ICDO3M],
+//  valueCodeableConcept: BasicCodeableConcept[ICDO3M],
   note: Option[List[Note]],
 )
 extends ObsTumorMorphologyProfile

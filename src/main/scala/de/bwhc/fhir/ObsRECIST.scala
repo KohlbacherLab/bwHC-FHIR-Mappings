@@ -22,7 +22,7 @@ extends ObservationSC
    with Observation.effectiveDateTime[LocalDate,Required]
    with Observation.subject[MTBPatient,Required]
    with Observation.valueCodeableConcept[
-     CodeableConcept with CodeableConcept.codingNel[Coding[RECIST.Value]],
+     CodeableConcept with CodeableConcept.codingNel[CodingStatic[RECIST.Value]],
      Required
    ]
 
@@ -34,7 +34,7 @@ case class ObsRECIST
   partOf: NonEmptyList[LogicalReference[MedicationStatement]],
   effectiveDateTime: LocalDate,
   subject: LogicalReference[MTBPatient],
-  valueCodeableConcept: BasicCodeableConcept[RECIST.Value]
+  valueCodeableConcept: CodeableConceptStatic[RECIST.Value]
 )
 extends ObsRECISTProfile
 

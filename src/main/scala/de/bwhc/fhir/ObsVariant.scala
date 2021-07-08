@@ -19,37 +19,37 @@ object ObsVariant
   sealed trait ClinVar
   object ClinVar
   {
-    implicit val system = Coding.System[ClinVar]("https://www.ncbi.nlm.nih.gov/clinvar/")
+    implicit val system = CodingSystem[ClinVar]("https://www.ncbi.nlm.nih.gov/clinvar/")
   }
 
   sealed trait HGNC
   object HGNC
   {
-    implicit val system = Coding.System[HGNC]("https://www.genenames.org/")
+    implicit val system = CodingSystem[HGNC]("https://www.genenames.org/")
   }
 
   sealed trait HGVS
   object HGVS
   {
-    implicit val system = Coding.System[HGVS]("https://www.hgvs.org")
+    implicit val system = CodingSystem[HGVS]("https://www.hgvs.org")
   }
 
   sealed trait dbSNP
   object dbSNP
   {
-    implicit val system = Coding.System[dbSNP]("https://www.ncbi.nlm.nih.gov/snp/")
+    implicit val system = CodingSystem[dbSNP]("https://www.ncbi.nlm.nih.gov/snp/")
   }
 
   sealed trait SequenceOntology
   object SequenceOntology
   {
-    implicit val system = Coding.System[SequenceOntology]("http://www.sequenceontology.org")
+    implicit val system = CodingSystem[SequenceOntology]("http://www.sequenceontology.org")
   }
 
   sealed trait TBD_LOINC
   object TBD_LOINC
   {
-    implicit val system = Coding.System[TBD_LOINC]("http://hl7.org/fhir/uv/genomics-reporting/CodeSystem/tbd-codes")
+    implicit val system = CodingSystem[TBD_LOINC]("http://hl7.org/fhir/uv/genomics-reporting/CodeSystem/tbd-codes")
   }
 
 
@@ -59,18 +59,18 @@ object ObsVariant
      with Observation.Component.valueString[Required]
  
 
-  final case class GeneStudied(valueCodeableConcept: BasicCodeableConcept[HGNC])
+  final case class GeneStudied(valueCodeableConcept: CodeableConceptStatic[HGNC])
   extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
-       CodeableConcept with CodeableConcept.codingNel[Coding[HGNC]],
+       CodeableConcept with CodeableConcept.codingNel[CodingStatic[HGNC]],
        Required
      ]
  
 
-  final case class FunctionalAnnotation(valueCodeableConcept: BasicCodeableConcept[SequenceOntology])
+  final case class FunctionalAnnotation(valueCodeableConcept: CodeableConceptStatic[SequenceOntology])
   extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
-       CodeableConcept with CodeableConcept.codingNel[Coding[SequenceOntology]],
+       CodeableConcept with CodeableConcept.codingNel[CodingStatic[SequenceOntology]],
        Required
      ]
 
@@ -93,26 +93,26 @@ object ObsVariant
      with Observation.Component.valueString[Required]
  
  
-  final case class AminoAcidChange(valueCodeableConcept: BasicCodeableConcept[HGVS])
+  final case class AminoAcidChange(valueCodeableConcept: CodeableConceptStatic[HGVS])
   extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
-       CodeableConcept with CodeableConcept.codingNel[Coding[HGVS]],
+       CodeableConcept with CodeableConcept.codingNel[CodingStatic[HGVS]],
        Required
      ]
  
  
-  final case class DNAChange(valueCodeableConcept: BasicCodeableConcept[HGVS])
+  final case class DNAChange(valueCodeableConcept: CodeableConceptStatic[HGVS])
   extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
-       CodeableConcept with CodeableConcept.codingNel[Coding[HGVS]],
+       CodeableConcept with CodeableConcept.codingNel[CodingStatic[HGVS]],
        Required
      ]
  
  
-  final case class DbSNPId(valueCodeableConcept: BasicCodeableConcept[dbSNP])
+  final case class DbSNPId(valueCodeableConcept: CodeableConceptStatic[dbSNP])
   extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
-       CodeableConcept with CodeableConcept.codingNel[Coding[dbSNP]],
+       CodeableConcept with CodeableConcept.codingNel[CodingStatic[dbSNP]],
        Required
      ]
  
@@ -241,7 +241,7 @@ extends ObsVariant
    with Observation.subject[Patient,Required]
    with Observation.interpretationNel[
      CodeableConcept
-     with CodeableConcept.codingNel[Coding[ObsVariant.ClinVar]]
+     with CodeableConcept.codingNel[CodingStatic[ObsVariant.ClinVar]]
    ]
 
 
@@ -271,7 +271,7 @@ final case class SimpleVariant
   status: Observation.Status.Value,
   subject: LogicalReference[Patient],
   component: SimpleVariant.Components,
-  interpretation: NonEmptyList[BasicCodeableConcept[ObsVariant.ClinVar]]
+  interpretation: NonEmptyList[CodeableConceptStatic[ObsVariant.ClinVar]]
 )
 extends SimpleVariantProfile
 

@@ -49,9 +49,11 @@ final case class ClaimDTO
 (
   identifier: NonEmptyList[Identifier],  
   created: LocalDate,
-  `type`: BasicCodeableConcept[Claim.Type.Value],
+  `type`: CodeableConceptStatic[Claim.Type.Value],
+//  `type`: BasicCodeableConcept[Claim.Type.Value],
   use: Claim.Use.Value,
-  priority: BasicCodeableConcept[ProcessPriority.Value],
+  priority: CodeableConceptStatic[ProcessPriority.Value],
+//  priority: BasicCodeableConcept[ProcessPriority.Value],
   status: Claim.Status.Value,
   prescription: LogicalReference[TherapyRecommendation],
   patient: LogicalReference[Patient],
@@ -73,7 +75,8 @@ final case class ClaimResponseDTO
 (
   identifier: NonEmptyList[Identifier],  
   created: LocalDate,
-  `type`: BasicCodeableConcept[Claim.Type.Value],
+  `type`: CodeableConceptStatic[Claim.Type.Value],
+//  `type`: BasicCodeableConcept[Claim.Type.Value],
   use: Claim.Use.Value,
   status: Claim.Status.Value,
   patient: LogicalReference[Patient],

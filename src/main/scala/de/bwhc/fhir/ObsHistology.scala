@@ -29,7 +29,7 @@ extends ObservationSC
    with Observation.effectiveDateTime[LocalDate,Optional]
    with Observation.subject[MTBPatient,Required]
    with Observation.valueCodeableConcept[
-          CodeableConcept with CodeableConcept.codingNel[Coding[ICDO3M]],
+          CodeableConcept with CodeableConcept.codingNel[CodingStatic[ICDO3M]],
           Optional
         ]
    with Observation.specimen[Required]
@@ -52,7 +52,7 @@ final case class ObsHistology
   effectiveDateTime: Option[LocalDate],
   subject: LogicalReference[MTBPatient],
   specimen: LogicalReference[Specimen],
-  valueCodeableConcept: Option[BasicCodeableConcept[ICDO3M]],
+  valueCodeableConcept: Option[CodeableConceptStatic[ICDO3M]],
   note: Option[List[Protocol]]
 )
 extends ObsHistologyProfile
