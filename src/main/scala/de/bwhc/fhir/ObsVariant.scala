@@ -78,9 +78,6 @@ object ObsVariant
   final case class ExactStartEnd(valueRange: LBoundedRange)
   extends Observation.ComponentElementSC
      with Observation.Component.valueRange[LBoundedRange,Required]
-//  final case class ExactStartEnd(valueString: String)
-//  extends Observation.ComponentElement
-//     with Observation.Component.valueString[Required]
  
  
   final case class RefAllele(valueString: String)
@@ -127,6 +124,76 @@ object ObsVariant
      with Observation.Component.valueQuantity[Quantity,Required]
 
  
+/*
+final case class CNV
+(
+  id: Variant.Id,
+  chromosome: Chromosome,
+  startRange: StartEnd,
+  endRange: StartEnd,
+  totalCopyNumber: Int,
+  relativeCopyNumber: Double,
+  cnA: Option[Double],
+  cnB: Option[Double],
+  reportedAffectedGenes: Option[List[Coding[Gene]]],
+  reportedFocality: Option[String],
+  `type`: CNV.Type.Value,
+  copyNumberNeutralLoH: Option[List[Coding[Gene]]],
+)
+extends Variant
+*/
+
+  // CNV components
+  final case class StartRange(valueRange: LBoundedRange)
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueRange[LBoundedRange,Required]
+ 
+  final case class EndRange(valueRange: LBoundedRange)
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueRange[LBoundedRange,Required]
+ 
+  final case class CopyNumber(valueInteger: Int)
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueInteger[Required]
+
+  final case class RelativeCopyNumber(valueQuantity: SimpleQuantity)
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueQuantity[Quantity,Required]
+
+  final case class CnA(valueQuantity: SimpleQuantity)
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueQuantity[Quantity,Required]
+
+  final case class CnB(valueQuantity: SimpleQuantity)
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueQuantity[Quantity,Required]
+
+  final case class ReportedAffectedGene(valueCodeableConcept: CodeableConceptStatic[HGNC])
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueCodeableConcept[
+       CodeableConcept with CodeableConcept.codingNel[CodingStatic[HGNC]],
+       Required
+     ]
+
+  final case class ReportedFocality(valueString: String)
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueString[Required]
+
+/*
+  final case class CNVType(valueCodeableConcept: CodeableConceptStatic[])
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueCodeableConcept[
+       CodeableConcept with CodeableConcept.codingNel[CodingStatic[]],
+       Required
+     ]
+*/
+
+  final case class CopyNumberNeutralLoH(valueCodeableConcept: CodeableConceptStatic[HGNC])
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueCodeableConcept[
+       CodeableConcept with CodeableConcept.codingNel[CodingStatic[HGNC]],
+       Required
+     ]
 
 
   object component
@@ -182,41 +249,114 @@ object ObsVariant
       val allelicReadDepth: C[AllelicReadDepth]
     } 
 
+
+    // CNV components
+    trait startRange[C[_]]{
+      val startRange: C[StartRange]
+    }
+  
+    trait endRange[C[_]]{
+      val endRange: C[EndRange]
+    }
+  
+    trait copyNumber[C[_]]{
+      val copyNumber: C[CopyNumber]
+    }
+
+    trait relativeCopyNumber[C[_]]{
+      val relativeCopyNumber: C[RelativeCopyNumber]
+    }
+ 
+    trait cnA[C[_]]{
+      val cnA: C[CnA]
+    }
+ 
+    trait cnB[C[_]]{       
+      val cnB: C[CnB]
+    }
+ 
+    trait reportedAffectedGenes[C[_]]{
+      val reportedAffectedGenes: C[List[ReportedAffectedGene]]
+    }
+    trait reportedAffectedGenesNel{
+      val reportedAffectedGenes: NonEmptyList[ReportedAffectedGene]
+    }
+ 
+    trait reportedFocality[C[_]]{
+      val reportedFocality: C[ReportedFocality]
+    }
+
+    trait copyNumberNeutralLoH[C[_]]{
+      val copyNumberNeutralLoH: C[List[CopyNumberNeutralLoH]]
+    }
+    trait copyNumberNeutralLoHNel{
+      val copyNumberNeutralLoH: NonEmptyList[CopyNumberNeutralLoH]
+    }
+
   }
 
-
   implicit val codeChromosome =
-    Code[Chromosome](LOINC("48000-4",Some("Chromosome")))
+    Code[Chromosome](LOINC("48000-4","Chromosome"))
 
   implicit val codeGeneStudied =
-    Code[GeneStudied](LOINC("48018-6",Some("GeneStudied")))
+    Code[GeneStudied](LOINC("48018-6","Gene Studied"))
  
   implicit val codeFunctionalAnnotation =
-    Code[FunctionalAnnotation,TBD_LOINC]("functional-annotation",Some("FunctionalAnnotation"))
+    Code[FunctionalAnnotation,TBD_LOINC]("functional-annotation","Functional Annotation")
  
   implicit val codeExactStartEnd =
-    Code[ExactStartEnd,TBD_LOINC]("exact-start-end",Some("Exact start-end"))
+    Code[ExactStartEnd,TBD_LOINC]("exact-start-end","Exact start-end")
  
   implicit val codeRefAllele =
-    Code[RefAllele](LOINC("69547-8",Some("RefAllele")))
+    Code[RefAllele](LOINC("69547-8","RefAllele"))
  
   implicit val codeAltAllele =
-    Code[AltAllele](LOINC("69551-0",Some("AltAllele")))
+    Code[AltAllele](LOINC("69551-0","AltAllele"))
  
   implicit val codeAminoAcidChange =
-    Code[AminoAcidChange](LOINC("48005-3",Some("AminoAcidChange")))
+    Code[AminoAcidChange](LOINC("48005-3","Amino Acid Change"))
  
   implicit val codeDNAChange =
-    Code[DNAChange](LOINC("48004-6",Some("DNAChange")))
+    Code[DNAChange](LOINC("48004-6","DNA Change"))
  
   implicit val codeDbSNPId =
-    Code[DbSNPId](LOINC("81255-2",Some("dbSNPId")))
+    Code[DbSNPId](LOINC("81255-2","dbSNPId"))
  
   implicit val codeSampleAllFreq =
-    Code[SampleAllelicFrequency](LOINC("81258-6",Some("SampleAllelicFrequency")))
+    Code[SampleAllelicFrequency](LOINC("81258-6","Sample Allelic Frequency"))
  
   implicit val codeAllelicReadDepth =
-    Code[AllelicReadDepth](LOINC("82121-5",Some("AllelicReadDepth")))
+    Code[AllelicReadDepth](LOINC("82121-5","Allelic Read Depth"))
+
+
+
+  implicit val codeStartRange =
+    Code[StartRange,TBD_LOINC]("start-range","Start Range")
+ 
+  implicit val codeEndRange =
+    Code[EndRange,TBD_LOINC]("end-range","End Range")
+ 
+  implicit val codeCopyNumber =
+    Code[CopyNumber](LOINC("82155-3","Copy Number"))
+
+  implicit val codeRelativeCopyNumber =
+    Code[RelativeCopyNumber,TBD_LOINC]("relative-copy-number","Relative Copy Number")
+
+  implicit val codeCnA =
+    Code[CnA,TBD_LOINC]("cnA","cnA")
+
+  implicit val codeCnB =
+    Code[CnB,TBD_LOINC]("cnB","cnB")
+
+  implicit val codeReportedAffectedGene =
+    Code[ReportedAffectedGene,TBD_LOINC]("reported-affected-gene","Reported Affected Gene")
+
+  implicit val codeReportedFocality =
+    Code[ReportedFocality,TBD_LOINC]("reported-focality","Reported Focality")
+
+  implicit val codeCopyNumberNeutralLoH =
+    Code[CopyNumberNeutralLoH,TBD_LOINC]("copy-number-neutral-loh","Copy Number Neutral LoH")
+
 
 
   implicit val formatChromosome             = Json.format[Chromosome]
@@ -231,6 +371,16 @@ object ObsVariant
   implicit val formatSampleAllelicFrequency = Json.format[SampleAllelicFrequency]
   implicit val formatAllelicReadDepth       = Json.format[AllelicReadDepth]
 
+  implicit val formatStartRange             = Json.format[StartRange]
+  implicit val formatEndRange               = Json.format[EndRange]
+  implicit val formatCopyNumber             = Json.format[CopyNumber]
+  implicit val formatRelativeCopyNumber     = Json.format[RelativeCopyNumber]
+  implicit val formatCnA                    = Json.format[CnA]
+  implicit val formatCnB                    = Json.format[CnB]
+  implicit val formatReportedAffectedGene   = Json.format[ReportedAffectedGene]
+  implicit val formatReportedFocality       = Json.format[ReportedFocality]
+  implicit val formatCopyNumberNeutralLoH   = Json.format[CopyNumberNeutralLoH]
+
 }
 
 
@@ -241,27 +391,28 @@ extends ObsVariant
    with Observation.subject[Patient,Required]
    with Observation.interpretationNel[
      CodeableConcept
-     with CodeableConcept.codingNel[CodingStatic[ObsVariant.ClinVar]]
+       with CodeableConcept.codingNel[CodingStatic[ObsVariant.ClinVar]]
    ]
 
 
+
+//TODO: add HGNC-ID?
 abstract class SimpleVariantProfile
 extends SomaticVariantProfile
    with Observation.components[
      Product
-     with ObsVariant.component.chromosome[Required]
-     with ObsVariant.component.geneStudiedNel
-     with ObsVariant.component.exactStartEnd[Required]
-     with ObsVariant.component.refAllele[Required]
-     with ObsVariant.component.altAllele[Required]
-     with ObsVariant.component.aminoAcidChange[Required]
-     with ObsVariant.component.dnaChange[Required]
-     with ObsVariant.component.sampleAllelicFrequency[Required]
-     with ObsVariant.component.allelicReadDepth[Required]
-     with ObsVariant.component.dbSNPId[Optional],
+       with ObsVariant.component.chromosome[Required]
+       with ObsVariant.component.geneStudiedNel
+       with ObsVariant.component.exactStartEnd[Required]
+       with ObsVariant.component.refAllele[Required]
+       with ObsVariant.component.altAllele[Required]
+       with ObsVariant.component.aminoAcidChange[Required]
+       with ObsVariant.component.dnaChange[Required]
+       with ObsVariant.component.sampleAllelicFrequency[Required]
+       with ObsVariant.component.allelicReadDepth[Required]
+       with ObsVariant.component.dbSNPId[Optional],
      Required
    ]
-
 
 
 final case class SimpleVariant
@@ -305,6 +456,7 @@ object SimpleVariant
      with ObsVariant.component.allelicReadDepth[Required]
 
 
+
   implicit val profile =
     Meta.Profiles[SimpleVariant]("http://bwhc.de/mtb/genetics-simple-somatic-variant")
 
@@ -319,3 +471,102 @@ object SimpleVariant
 
 }
 
+
+/*
+final case class CNV
+(
+  id: Variant.Id,
+  chromosome: Chromosome,
+  startRange: StartEnd,
+  endRange: StartEnd,
+  totalCopyNumber: Int,
+  relativeCopyNumber: Double,
+  cnA: Option[Double],
+  cnB: Option[Double],
+  reportedAffectedGenes: Option[List[Coding[Gene]]],
+  reportedFocality: Option[String],
+  `type`: CNV.Type.Value,
+  copyNumberNeutralLoH: Option[List[Coding[Gene]]],
+)
+extends Variant
+*/
+
+abstract class CNVProfile
+extends SomaticVariantProfile
+   with Observation.components[
+     Product
+       with ObsVariant.component.chromosome[Required]
+       with ObsVariant.component.startRange[Required]
+       with ObsVariant.component.endRange[Required]
+       with ObsVariant.component.copyNumber[Required]
+       with ObsVariant.component.relativeCopyNumber[Required]
+       with ObsVariant.component.cnA[Optional]
+       with ObsVariant.component.cnB[Optional]
+       with ObsVariant.component.reportedAffectedGenes[Required]
+//       with ObsVariant.component.reportedAffectedGenes[Optional]
+       with ObsVariant.component.reportedFocality[Optional]
+       with ObsVariant.component.copyNumberNeutralLoH[Required],
+//       with ObsVariant.component.copyNumberNeutralLoH[Optional],
+     Required
+   ]
+
+
+final case class CNV
+(
+  id: String,
+  identifier: Option[List[Identifier]],
+  status: Observation.Status.Value,
+  subject: LogicalReference[Patient],
+  component: CNV.Components,
+  interpretation: NonEmptyList[CodeableConceptStatic[ObsVariant.ClinVar]]
+)
+extends CNVProfile
+
+
+object CNV
+{
+
+  import ObsVariant._
+
+  final case class Components
+  (
+    chromosome: Chromosome,
+    startRange: StartRange,
+    endRange: EndRange,
+    copyNumber: CopyNumber,
+    relativeCopyNumber: RelativeCopyNumber,
+    cnA: Option[CnA],
+    cnB: Option[CnB],
+    reportedAffectedGenes: List[ReportedAffectedGene],
+//    reportedAffectedGenes: Option[List[ReportedAffectedGene]],
+    reportedFocality: Option[ReportedFocality],
+    copyNumberNeutralLoH: List[CopyNumberNeutralLoH]
+//    copyNumberNeutralLoH: Option[List[CopyNumberNeutralLoH]]
+  ) 
+  extends ObsVariant.component.chromosome[Required]
+     with ObsVariant.component.startRange[Required]
+     with ObsVariant.component.endRange[Required]
+     with ObsVariant.component.copyNumber[Required]
+     with ObsVariant.component.relativeCopyNumber[Required]
+     with ObsVariant.component.cnA[Optional]
+     with ObsVariant.component.cnB[Optional]
+     with ObsVariant.component.reportedAffectedGenes[Required]
+//     with ObsVariant.component.reportedAffectedGenes[Optional]
+     with ObsVariant.component.reportedFocality[Optional]
+     with ObsVariant.component.copyNumberNeutralLoH[Required]
+//     with ObsVariant.component.copyNumberNeutralLoH[Optional]
+
+
+  implicit val profile =
+    Meta.Profiles[CNV]("http://bwhc.de/mtb/genetics-copy-number-variant")
+
+  implicit val code =
+    Code[CNV,TBD_LOINC]("copy-number-Variant","Copy Number Variant")
+
+
+  import org.hl7.fhir.r4.json._
+  import json.backboneElements._
+
+  implicit val format = Json.format[CNV]
+
+}
