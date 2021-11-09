@@ -61,7 +61,8 @@ extends Bundle.Collection
        val diagnoses:                  List[EntryElement with Entry.resource[DiagnosisProfile]]
        val familyMemberDiagnoses:      List[EntryElement with Entry.resource[FamilyMemberHistoryProfile]]
        val previousGLTherapies:        List[EntryElement with Entry.resource[GuidelineTherapyProfile]]
-       val lastGLTherapy:              Option[EntryElement with Entry.resource[LastGuidelineTherapyProfile]]
+       val lastGLTherapies:            List[EntryElement with Entry.resource[LastGuidelineTherapyProfile]]
+//       val lastGLTherapy:              Option[EntryElement with Entry.resource[LastGuidelineTherapyProfile]]
        val ecogs:                      List[EntryElement with Entry.resource[ObsECOGProfile]]
        val specimens:                  List[EntryElement with Entry.resource[TumorSpecimenProfile]]
        val histology:                  List[EntryElement with Entry.resource[HistologyReportProfile]]
@@ -101,7 +102,8 @@ object MTBFileBundle
     diagnoses:                  List[EntryOf[Diagnosis]],
     familyMemberDiagnoses:      List[EntryOf[FamilyMemberHistoryDTO]],
     previousGLTherapies:        List[EntryOf[PreviousGuidelineTherapy]],
-    lastGLTherapy:              Option[EntryOf[LastGuidelineTherapy]],
+    lastGLTherapies:            List[EntryOf[LastGuidelineTherapy]],
+//    lastGLTherapy:              Option[EntryOf[LastGuidelineTherapy]],
     ecogs:                      List[EntryOf[ObsECOG]],
     specimens:                  List[EntryOf[TumorSpecimen]],
     histology:                  List[EntryOf[HistologyReport]],

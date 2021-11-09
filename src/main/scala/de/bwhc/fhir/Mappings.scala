@@ -773,6 +773,20 @@ object Mappings
     Identifier(id.value)
 
 
+  implicit val geneIdCodingToFHIR: dtos.Coding[dtos.Variant.HgncId] => ObsVariant.GeneStudied = {
+    c =>
+      ObsVariant.GeneStudied(
+        CodeableConceptStatic(CodingStatic[ObsVariant.HGNC](c.code.value,c.display,None))
+      )
+  }
+
+  implicit val geneSymbolCodingToFHIR: dtos.Coding[dtos.Variant.Gene] => ObsVariant.GeneStudied = {
+    c =>
+      ObsVariant.GeneStudied(
+        CodeableConceptStatic(CodingStatic[ObsVariant.HGNC](c.code.value,c.display,None))
+      )
+  }
+
   implicit def simpleVariantToFHIR(
     implicit subject: LogicalReference[MTBPatient]
   ): dtos.SimpleVariant => SimpleVariant = {
@@ -789,21 +803,40 @@ object Mappings
         subject,
         SimpleVariant.Components(
           Chromosome(snv.chromosome.value),
+          snv.geneId.map(_.mapTo[GeneStudied])
+            .orElse(snv.gene.map(_.mapTo[GeneStudied]))
+            .toList,
+/*
+            .map(
+              c =>
+                GeneStudied(
+                  CodeableConceptStatic(CodingStatic[HGNC](c.code.value,c.display,None))
+                )
+              ),
+*/
+/*
           NonEmptyList.one(
             GeneStudied(
               CodeableConceptStatic(CodingStatic[HGNC](snv.gene.code.value,snv.gene.display,None))
             )
           ),
+*/
           ExactStartEnd(
             LBoundedRange(snv.startEnd.start.toDouble,snv.startEnd.end.map(_.toDouble))
           ),
           RefAllele(snv.refAllele.value),
           AltAllele(snv.altAllele.value),
-          DNAChange(
-            CodeableConceptStatic(CodingStatic[HGVS](snv.dnaChange.code.value,None,None))
+          snv.dnaChange.map(
+            dnaChg =>
+              DNAChange(
+                CodeableConceptStatic(CodingStatic[HGVS](dnaChg.code.value,None,None))
+             )
           ),
-          AminoAcidChange(
-            CodeableConceptStatic(CodingStatic[HGVS](snv.aminoAcidChange.code.value,None,None))
+          snv.aminoAcidChange.map(
+            aaChg =>
+              AminoAcidChange(
+                CodeableConceptStatic(CodingStatic[HGVS](aaChg.code.value,None,None))
+              )
           ),
           snv.dbSNPId.map(v => DbSNPId(CodeableConceptStatic(CodingStatic[dbSNP](v.value,None,None)))),
           SampleAllelicFrequency(
@@ -1371,9 +1404,6 @@ object Mappings
     mtbfile =>
 
       implicit def toBundleEntry[R <: Resource](r: R): EntryOf[R] = EntryOf(r)
-//      implicit def toBundleEntryIds[R <: DomainResource { val identifier: NonEmptyList[Identifier]}](r: R): EntryOf[R] = EntryOf(r)
-
-//      implicit def toBundleEntryId[R <: Resource { val identifier: Identifier}](r: R): EntryOf[R] = EntryOf(r)
 
       implicit val pat = mtbfile.patient
       
@@ -1386,7 +1416,8 @@ object Mappings
           mtbfile.diagnoses.getOrElse(List.empty).map(_.mapTo[Diagnosis]),
           mtbfile.familyMemberDiagnoses.getOrElse(List.empty).map(_.mapTo[FamilyMemberHistoryDTO]),
           mtbfile.previousGuidelineTherapies.getOrElse(List.empty).map(_.mapTo[PreviousGuidelineTherapy]),
-          mtbfile.lastGuidelineTherapy.map(_.mapTo[LastGuidelineTherapy]),
+          mtbfile.lastGuidelineTherapies.getOrElse(List.empty).map(_.mapTo[LastGuidelineTherapy]),
+//          mtbfile.lastGuidelineTherapy.map(_.mapTo[LastGuidelineTherapy]),
           mtbfile.ecogStatus.getOrElse(List.empty).map(_.mapTo[ObsECOG]),
           mtbfile.specimens.getOrElse(List.empty).map(_.mapTo[TumorSpecimen]),
           mtbfile.histologyReports.getOrElse(List.empty).map(_.mapTo[HistologyReport]),
@@ -1442,7 +1473,8 @@ object Mappings
         Some(bundle.entry.diagnoses.map(_.mapTo[dtos.Diagnosis])).filterNot(_.isEmpty),
         Some(bundle.entry.familyMemberDiagnoses.map(_.mapTo[dtos.FamilyMemberDiagnosis])).filterNot(_.isEmpty),
         Some(bundle.entry.previousGLTherapies.map(_.mapTo[dtos.PreviousGuidelineTherapy])),
-        bundle.entry.lastGLTherapy.map(_.mapTo[dtos.LastGuidelineTherapy]),
+        Some(bundle.entry.lastGLTherapies.map(_.mapTo[dtos.LastGuidelineTherapy])),
+//        bundle.entry.lastGLTherapy.map(_.mapTo[dtos.LastGuidelineTherapy]),
         Some(bundle.entry.ecogs.map(_.mapTo[dtos.ECOGStatus])),
         Some(bundle.entry.specimens.map(_.mapTo[dtos.Specimen])),
     None, //TODO

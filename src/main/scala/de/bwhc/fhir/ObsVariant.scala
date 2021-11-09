@@ -402,12 +402,12 @@ extends SomaticVariantProfile
    with Observation.components[
      Product
        with ObsVariant.component.chromosome[Required]
-       with ObsVariant.component.geneStudiedNel
+       with ObsVariant.component.geneStudied[Required]
        with ObsVariant.component.exactStartEnd[Required]
        with ObsVariant.component.refAllele[Required]
        with ObsVariant.component.altAllele[Required]
-       with ObsVariant.component.aminoAcidChange[Required]
-       with ObsVariant.component.dnaChange[Required]
+       with ObsVariant.component.aminoAcidChange[Optional]
+       with ObsVariant.component.dnaChange[Optional]
        with ObsVariant.component.sampleAllelicFrequency[Required]
        with ObsVariant.component.allelicReadDepth[Required]
        with ObsVariant.component.dbSNPId[Optional],
@@ -434,23 +434,23 @@ object SimpleVariant
   final case class Components
   (
     chromosome: Chromosome,
-    geneStudied: NonEmptyList[GeneStudied],
+    geneStudied: List[GeneStudied],
     exactStartEnd: ExactStartEnd,
     refAllele: RefAllele,
     altAllele: AltAllele,
-    dnaChange: DNAChange,
-    aminoAcidChange: AminoAcidChange,
+    dnaChange: Option[DNAChange],
+    aminoAcidChange: Option[AminoAcidChange],
     dbSNPId: Option[DbSNPId],
     sampleAllelicFrequency: SampleAllelicFrequency,
     allelicReadDepth: AllelicReadDepth
   )
-  extends ObsVariant.component.geneStudiedNel
+  extends ObsVariant.component.geneStudied[Required]
      with ObsVariant.component.chromosome[Required]
      with ObsVariant.component.exactStartEnd[Required]
      with ObsVariant.component.refAllele[Required]
      with ObsVariant.component.altAllele[Required]
-     with ObsVariant.component.dnaChange[Required]
-     with ObsVariant.component.aminoAcidChange[Required]
+     with ObsVariant.component.dnaChange[Optional]
+     with ObsVariant.component.aminoAcidChange[Optional]
      with ObsVariant.component.dbSNPId[Optional]
      with ObsVariant.component.sampleAllelicFrequency[Required]
      with ObsVariant.component.allelicReadDepth[Required]
@@ -503,10 +503,8 @@ extends SomaticVariantProfile
        with ObsVariant.component.cnA[Optional]
        with ObsVariant.component.cnB[Optional]
        with ObsVariant.component.reportedAffectedGenes[Required]
-//       with ObsVariant.component.reportedAffectedGenes[Optional]
        with ObsVariant.component.reportedFocality[Optional]
        with ObsVariant.component.copyNumberNeutralLoH[Required],
-//       with ObsVariant.component.copyNumberNeutralLoH[Optional],
      Required
    ]
 
@@ -538,10 +536,8 @@ object CNV
     cnA: Option[CnA],
     cnB: Option[CnB],
     reportedAffectedGenes: List[ReportedAffectedGene],
-//    reportedAffectedGenes: Option[List[ReportedAffectedGene]],
     reportedFocality: Option[ReportedFocality],
     copyNumberNeutralLoH: List[CopyNumberNeutralLoH]
-//    copyNumberNeutralLoH: Option[List[CopyNumberNeutralLoH]]
   ) 
   extends ObsVariant.component.chromosome[Required]
      with ObsVariant.component.startRange[Required]
@@ -551,10 +547,8 @@ object CNV
      with ObsVariant.component.cnA[Optional]
      with ObsVariant.component.cnB[Optional]
      with ObsVariant.component.reportedAffectedGenes[Required]
-//     with ObsVariant.component.reportedAffectedGenes[Optional]
      with ObsVariant.component.reportedFocality[Optional]
      with ObsVariant.component.copyNumberNeutralLoH[Required]
-//     with ObsVariant.component.copyNumberNeutralLoH[Optional]
 
 
   implicit val profile =
