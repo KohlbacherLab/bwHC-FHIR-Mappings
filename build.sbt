@@ -16,7 +16,7 @@ lazy val root = project.in(file("."))
   .settings(
     libraryDependencies ++= Seq(
       "de.ekut.tbi"       %% "fhir-proof"                        % "0.1-SNAPSHOT",
-      "de.bwhc"           %% "utils"                             % "1.0-SNAPSHOT",
+//      "de.bwhc"           %% "utils"                             % "1.0-SNAPSHOT",
       "de.bwhc"           %% "icd-catalogs-api"                  % "1.0-SNAPSHOT",
       "de.bwhc"           %% "data-entry-service-api"            % "1.0-SNAPSHOT",
       "de.bwhc"           %% "mtb-dto-generators"                % "1.0-SNAPSHOT" % Test,

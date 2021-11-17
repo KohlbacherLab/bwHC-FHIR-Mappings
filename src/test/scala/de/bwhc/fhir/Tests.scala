@@ -16,11 +16,10 @@ import ca.uhn.fhir.validation.{
 
 import de.ekut.tbi.generators.Gen
 
-import de.bwhc.util.mapping.syntax._
-
 import de.bwhc.mtb.data.entry.dtos
 import de.bwhc.mtb.data.gens._
 
+import org.hl7.fhir.r4.LogicalReference
 import org.hl7.fhir.r4.FHIRJson._
 import Mappings._
 
@@ -43,7 +42,7 @@ class Tests extends AnyFlatSpec
 
   "Patient" must "be serialized to valid FHIR/JSON" in {
     
-    val patient = Gen.of[dtos.Patient].map(_.mapTo[MTBPatient]).next
+    val patient = Gen.of[dtos.Patient].next.mapTo[MTBPatient]
 
     val fhirJson = patient.toFHIRJson
 
@@ -62,9 +61,70 @@ class Tests extends AnyFlatSpec
   }
 
 
+
+  "SimpleVariant" must "be serialized to valid FHIR/JSON" in {
+   
+    val mtbfile = Gen.of[dtos.MTBFile].next
+
+    implicit val subject  = LogicalReference[MTBPatient](mtbfile.patient.id)
+ 
+    val snv =
+      mtbfile
+        .ngsReports.get.head
+        .simpleVariants.get.head
+        .mapTo[SimpleVariant]
+
+    val fhirJson = snv.toFHIRJson
+
+    println(Json.prettyPrint(fhirJson))
+
+
+    val validation = hapiValidator.validateWithResult(Json.stringify(fhirJson))
+    if (!validation.isSuccessful) validation.getMessages.forEach(println)
+
+//    validation.isSuccessful mustBe true
+
+    val parsed = fhirJson.asFHIR[SimpleVariant]
+
+    parsed.filter(_ == snv).isSuccess mustBe true
+
+  }
+
+
+  "CopyNumberVariant" must "be serialized to valid FHIR/JSON" in {
+    
+    val mtbfile = Gen.of[dtos.MTBFile].next
+
+    implicit val subject  = LogicalReference[MTBPatient](mtbfile.patient.id)
+ 
+    val cnv =
+      mtbfile
+        .ngsReports.get.head
+        .copyNumberVariants.get.head
+        .mapTo[CopyNumberVariant]
+
+
+    val fhirJson = cnv.toFHIRJson
+
+    println(Json.prettyPrint(fhirJson))
+
+
+    val validation = hapiValidator.validateWithResult(Json.stringify(fhirJson))
+    if (!validation.isSuccessful) validation.getMessages.forEach(println)
+
+//    validation.isSuccessful mustBe true
+
+    val parsed = fhirJson.asFHIR[CopyNumberVariant]
+
+    parsed.filter(_ == cnv).isSuccess mustBe true
+
+  }
+
+
+
   "MTBFileBundle" must "be serialized to valid FHIR/JSON" in {
     
-    val bundle = Gen.of[dtos.MTBFile].map(_.mapTo[MTBFileBundle]).next
+    val bundle = Gen.of[dtos.MTBFile].next.mapTo[MTBFileBundle]
 
     val fhirJson = bundle.toFHIRJson
 

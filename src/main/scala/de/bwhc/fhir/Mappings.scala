@@ -8,10 +8,7 @@ import java.util.UUID.{randomUUID => rndID}
 
 import cats.data.NonEmptyList
 
-import de.bwhc.util.mapping.syntax._
-import de.bwhc.catalogs.icd
-import de.bwhc.catalogs.icd._
-import de.bwhc.catalogs.med
+//import de.bwhc.util.mapping.syntax._
 import de.bwhc.mtb.data.entry.dtos
 
 import org.hl7.fhir.r4._
@@ -26,6 +23,20 @@ object Mappings
   import scala.language.implicitConversions
 
 
+  implicit class MappingSyntax[T](val t: T) extends AnyVal
+  {
+    def mapTo[U](implicit f: T => U) = f(t)
+  }
+
+
+  implicit class FuntorMappingSyntax[T,F[_]: cats.Functor](val ft: F[T])
+  {
+    import cats.syntax.functor._
+
+    def mapToF[U](implicit f: T => U) = ft.map(f)
+  }
+
+
   implicit class MapOps[K,V](val map: Map[K,V]) extends AnyVal
   {
     def invert: Map[V,K] =
@@ -33,6 +44,10 @@ object Mappings
        .foldLeft(List.empty[(V,K)])((l,kv) => (kv._2,kv._1) :: l)
        .toMap
   }
+
+
+  import cats.instances.list._
+  import cats.instances.option._
 
 
   implicit def mapBundleEntry[R <: Resource,T](
@@ -773,19 +788,20 @@ object Mappings
     Identifier(id.value)
 
 
-  implicit val geneIdCodingToFHIR: dtos.Coding[dtos.Variant.HgncId] => ObsVariant.GeneStudied = {
+  implicit val geneIdCodingToCodeableConcept: dtos.Coding[dtos.Variant.HgncId] => CodeableConceptStatic[ObsVariant.HGNC] = {
     c =>
-      ObsVariant.GeneStudied(
-        CodeableConceptStatic(CodingStatic[ObsVariant.HGNC](c.code.value,c.display,None))
+      CodeableConceptStatic(
+        CodingStatic[ObsVariant.HGNC](c.code.value,c.display,None)
       )
   }
 
-  implicit val geneSymbolCodingToFHIR: dtos.Coding[dtos.Variant.Gene] => ObsVariant.GeneStudied = {
+  implicit val geneSymbolCodingToCodeableConcept: dtos.Coding[dtos.Variant.GeneSymbol] => CodeableConceptStatic[ObsVariant.HGNC] = {
     c =>
-      ObsVariant.GeneStudied(
-        CodeableConceptStatic(CodingStatic[ObsVariant.HGNC](c.code.value,c.display,None))
+      CodeableConceptStatic(
+        CodingStatic[ObsVariant.HGNC](c.code.value,c.display,None)
       )
   }
+
 
   implicit def simpleVariantToFHIR(
     implicit subject: LogicalReference[MTBPatient]
@@ -798,29 +814,15 @@ object Mappings
       
       SimpleVariant(
         snv.id.value,
-        snv.cosmicId.map(_.mapTo[Identifier]).map(List(_)),
+        snv.cosmicId.mapToF[Identifier].map(List(_)),
         Observation.Status.Final,
         subject,
         SimpleVariant.Components(
           Chromosome(snv.chromosome.value),
-          snv.geneId.map(_.mapTo[GeneStudied])
-            .orElse(snv.gene.map(_.mapTo[GeneStudied]))
+          snv.geneId.mapToF[CodeableConceptStatic[HGNC]]
+            .orElse(snv.gene.mapToF[CodeableConceptStatic[HGNC]])
+            .map(GeneStudied(_))
             .toList,
-/*
-            .map(
-              c =>
-                GeneStudied(
-                  CodeableConceptStatic(CodingStatic[HGNC](c.code.value,c.display,None))
-                )
-              ),
-*/
-/*
-          NonEmptyList.one(
-            GeneStudied(
-              CodeableConceptStatic(CodingStatic[HGNC](snv.gene.code.value,snv.gene.display,None))
-            )
-          ),
-*/
           ExactStartEnd(
             LBoundedRange(snv.startEnd.start.toDouble,snv.startEnd.end.map(_.toDouble))
           ),
@@ -855,6 +857,52 @@ object Mappings
   }  
 
 
+  implicit def cnvToFHIR(
+    implicit subject: LogicalReference[MTBPatient]
+  ): dtos.CNV => CopyNumberVariant = {
+
+    cnv =>
+
+    import ObsVariant._
+    import CopyNumberVariant._
+      
+      CopyNumberVariant(
+        cnv.id.value,
+        None,
+        Observation.Status.Final,
+        subject,
+        CopyNumberVariant.Components(
+          Chromosome(cnv.chromosome.value),
+          StartRange(
+            LBoundedRange(cnv.startRange.start.toDouble,cnv.startRange.end.map(_.toDouble))
+          ),
+          EndRange(
+            LBoundedRange(cnv.endRange.start.toDouble,cnv.endRange.end.map(_.toDouble))
+          ),
+          CopyNumber(cnv.totalCopyNumber),
+          RelativeCopyNumber(
+            SimpleQuantity(cnv.relativeCopyNumber)
+          ),
+          cnv.cnA.map(SimpleQuantity(_)).map(CnA(_)),
+          cnv.cnB.map(SimpleQuantity(_)).map(CnB(_)),
+          cnv.reportedAffectedGeneIds.map(_.mapToF[CodeableConceptStatic[HGNC]])
+            .orElse(
+               cnv.reportedAffectedGenes.map(_.mapToF[CodeableConceptStatic[HGNC]])
+             )
+             .getOrElse(List.empty)
+             .map(ReportedAffectedGene(_)),
+          cnv.reportedFocality.map(ReportedFocality(_)),
+          cnv.copyNumberNeutralLoHIds.map(_.mapToF[CodeableConceptStatic[HGNC]])
+            .orElse(
+               cnv.copyNumberNeutralLoH.map(_.mapToF[CodeableConceptStatic[HGNC]])
+             )
+             .getOrElse(List.empty)
+             .map(CopyNumberNeutralLoH(_)),
+        )
+      )
+  }  
+
+
   implicit val ngsReportToFHIR: dtos.SomaticNGSReport => SomaticNGSReport = {
 
     ngsReport =>
@@ -866,9 +914,10 @@ object Mappings
 
       val tcc      = ngsReport.tumorCellContent.mapTo[ObsTumorCellContent]
       val tmb      = ngsReport.tmb.mapTo[ObsTMB]
-      val msi      = ngsReport.msi.map(_.mapTo[ObsMSI])
-      val brcaness = ngsReport.brcaness.map(_.mapTo[ObsBRCAness])
-      val snvs     = ngsReport.simpleVariants.getOrElse(List.empty).map(_.mapTo[SimpleVariant])
+      val msi      = ngsReport.msi.mapToF[ObsMSI]
+      val brcaness = ngsReport.brcaness.mapToF[ObsBRCAness]
+      val snvs     = ngsReport.simpleVariants.getOrElse(List.empty).mapToF[SimpleVariant]
+      val cnvs     = ngsReport.copyNumberVariants.getOrElse(List.empty).mapToF[CopyNumberVariant]
 
       SomaticNGSReport(
         NonEmptyList.one(Identifier(ngsReport.id.value)),
@@ -895,13 +944,15 @@ object Mappings
         ) ++
           msi.map(Reference.contained(_)).toList ++
           brcaness.map(Reference.contained(_)).toList ++
-          snvs.map(Reference.contained(_)),
+          snvs.map(Reference.contained(_)) ++
+          cnvs.map(Reference.contained(_)),
         SomaticNGSReport.Results(
           tcc,
           tmb,
           msi,
           brcaness,
-          snvs          
+          snvs,
+          cnvs
         )
       )
 
@@ -1409,7 +1460,6 @@ object Mappings
       
       MTBFileBundle(
         MTBFileBundle.Entries(
-//          mtbfile.patient.toFHIR,
           mtbfile.patient.mapTo[MTBPatient],
           mtbfile.episode.mapTo[MTBEpisode],
           mtbfile.consent.mapTo[BwHCConsent],
@@ -1417,7 +1467,6 @@ object Mappings
           mtbfile.familyMemberDiagnoses.getOrElse(List.empty).map(_.mapTo[FamilyMemberHistoryDTO]),
           mtbfile.previousGuidelineTherapies.getOrElse(List.empty).map(_.mapTo[PreviousGuidelineTherapy]),
           mtbfile.lastGuidelineTherapies.getOrElse(List.empty).map(_.mapTo[LastGuidelineTherapy]),
-//          mtbfile.lastGuidelineTherapy.map(_.mapTo[LastGuidelineTherapy]),
           mtbfile.ecogStatus.getOrElse(List.empty).map(_.mapTo[ObsECOG]),
           mtbfile.specimens.getOrElse(List.empty).map(_.mapTo[TumorSpecimen]),
           mtbfile.histologyReports.getOrElse(List.empty).map(_.mapTo[HistologyReport]),
@@ -1428,37 +1477,11 @@ object Mappings
           mtbfile.rebiopsyRequests.getOrElse(List.empty).map(_.mapTo[RebiopsyRequest]),
           mtbfile.claims.getOrElse(List.empty).map(_.mapTo[ClaimDTO]),
           mtbfile.claimResponses.getOrElse(List.empty).map(_.mapTo[ClaimResponseDTO]),
-//          mtbfile.molecularTherapies.getOrElse(List.empty).map(_.mapTo[MolecularTherapyHistory]).map(EntryOf(_,None)),
           mtbfile.molecularTherapies.getOrElse(List.empty).map(_.mapTo[MolecularTherapyHistory]),
           mtbfile.responses.getOrElse(List.empty).map(_.mapTo[ObsRECIST])
         )
       )
-/*
-      MTBFileBundle(
-        MTBFileEntries(
-          EntryOf(mtbfile.patient.mapTo[MTBPatient]),
-          EntryOf(mtbfile.episode.mapTo[MTBEpisode]),
-          EntryOf(mtbfile.consent.mapTo[BwHCConsent]),
-          mtbfile.diagnoses.getOrElse(List.empty).map(_.mapTo[Diagnosis]).map(EntryOf(_)),
-          mtbfile.familyMemberDiagnoses.getOrElse(List.empty).map(_.mapTo[FamilyMemberHistoryDTO]).map(EntryOf(_)),
-          mtbfile.previousGuidelineTherapies.getOrElse(List.empty).map(_.mapTo[PreviousGuidelineTherapy]).map(EntryOf(_)),
-          mtbfile.lastGuidelineTherapy.map(_.mapTo[LastGuidelineTherapy]).map(EntryOf(_)),
-          mtbfile.ecogStatus.getOrElse(List.empty).map(_.mapTo[ObsECOG]).map(EntryOf(_)),
-          mtbfile.specimens.getOrElse(List.empty).map(_.mapTo[TumorSpecimen]).map(EntryOf(_)),
-          mtbfile.histologyReports.getOrElse(List.empty).map(_.mapTo[HistologyReport]).map(EntryOf(_)),
-          mtbfile.ngsReports.getOrElse(List.empty).map(_.mapTo[SomaticNGSReport]).map(EntryOf(_)),
-          mtbfile.carePlans.getOrElse(List.empty).map(_.mapTo[MTBCarePlan]).map(EntryOf(_)),
-          mtbfile.recommendations.getOrElse(List.empty).map(_.mapTo[TherapyRecommendation]).map(EntryOf(_)),
-          mtbfile.geneticCounsellingRequests.getOrElse(List.empty).map(_.mapTo[CounsellingRequest]).map(EntryOf(_)),
-          mtbfile.rebiopsyRequests.getOrElse(List.empty).map(_.mapTo[RebiopsyRequest]).map(EntryOf(_)),
-          mtbfile.claims.getOrElse(List.empty).map(_.mapTo[ClaimDTO]).map(EntryOf(_)),
-          mtbfile.claimResponses.getOrElse(List.empty).map(_.mapTo[ClaimResponseDTO]).map(EntryOf(_)),
-          mtbfile.molecularTherapies.getOrElse(List.empty).map(_.mapTo[MolecularTherapyHistory]).map(EntryOf(_)),
-          mtbfile.responses.getOrElse(List.empty).map(_.mapTo[ObsRECIST]).map(EntryOf(_))
-        )
-      )
-*/
-    }
+  }
 
 
   implicit val mtbFileFromFHIR: MTBFileBundle => dtos.MTBFile = {
@@ -1474,7 +1497,6 @@ object Mappings
         Some(bundle.entry.familyMemberDiagnoses.map(_.mapTo[dtos.FamilyMemberDiagnosis])).filterNot(_.isEmpty),
         Some(bundle.entry.previousGLTherapies.map(_.mapTo[dtos.PreviousGuidelineTherapy])),
         Some(bundle.entry.lastGLTherapies.map(_.mapTo[dtos.LastGuidelineTherapy])),
-//        bundle.entry.lastGLTherapy.map(_.mapTo[dtos.LastGuidelineTherapy]),
         Some(bundle.entry.ecogs.map(_.mapTo[dtos.ECOGStatus])),
         Some(bundle.entry.specimens.map(_.mapTo[dtos.Specimen])),
     None, //TODO

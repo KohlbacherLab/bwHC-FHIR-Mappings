@@ -124,25 +124,6 @@ object ObsVariant
      with Observation.Component.valueQuantity[Quantity,Required]
 
  
-/*
-final case class CNV
-(
-  id: Variant.Id,
-  chromosome: Chromosome,
-  startRange: StartEnd,
-  endRange: StartEnd,
-  totalCopyNumber: Int,
-  relativeCopyNumber: Double,
-  cnA: Option[Double],
-  cnB: Option[Double],
-  reportedAffectedGenes: Option[List[Coding[Gene]]],
-  reportedFocality: Option[String],
-  `type`: CNV.Type.Value,
-  copyNumberNeutralLoH: Option[List[Coding[Gene]]],
-)
-extends Variant
-*/
-
   // CNV components
   final case class StartRange(valueRange: LBoundedRange)
   extends Observation.ComponentElementSC
@@ -389,11 +370,6 @@ extends ObsVariant
    with Observation.id[Required]
    with Observation.identifier[Optional]
    with Observation.subject[Patient,Required]
-   with Observation.interpretationNel[
-     CodeableConcept
-       with CodeableConcept.codingNel[CodingStatic[ObsVariant.ClinVar]]
-   ]
-
 
 
 //TODO: add HGNC-ID?
@@ -412,6 +388,10 @@ extends SomaticVariantProfile
        with ObsVariant.component.allelicReadDepth[Required]
        with ObsVariant.component.dbSNPId[Optional],
      Required
+   ]
+   with Observation.interpretationNel[
+     CodeableConcept
+       with CodeableConcept.codingNel[CodingStatic[ObsVariant.ClinVar]]
    ]
 
 
@@ -472,26 +452,8 @@ object SimpleVariant
 }
 
 
-/*
-final case class CNV
-(
-  id: Variant.Id,
-  chromosome: Chromosome,
-  startRange: StartEnd,
-  endRange: StartEnd,
-  totalCopyNumber: Int,
-  relativeCopyNumber: Double,
-  cnA: Option[Double],
-  cnB: Option[Double],
-  reportedAffectedGenes: Option[List[Coding[Gene]]],
-  reportedFocality: Option[String],
-  `type`: CNV.Type.Value,
-  copyNumberNeutralLoH: Option[List[Coding[Gene]]],
-)
-extends Variant
-*/
 
-abstract class CNVProfile
+abstract class CopyNumberVariantProfile
 extends SomaticVariantProfile
    with Observation.components[
      Product
@@ -504,24 +466,24 @@ extends SomaticVariantProfile
        with ObsVariant.component.cnB[Optional]
        with ObsVariant.component.reportedAffectedGenes[Required]
        with ObsVariant.component.reportedFocality[Optional]
+//TODO: CNV.Type
        with ObsVariant.component.copyNumberNeutralLoH[Required],
      Required
    ]
 
 
-final case class CNV
+final case class CopyNumberVariant
 (
   id: String,
   identifier: Option[List[Identifier]],
   status: Observation.Status.Value,
   subject: LogicalReference[Patient],
-  component: CNV.Components,
-  interpretation: NonEmptyList[CodeableConceptStatic[ObsVariant.ClinVar]]
+  component: CopyNumberVariant.Components
 )
-extends CNVProfile
+extends CopyNumberVariantProfile
 
 
-object CNV
+object CopyNumberVariant
 {
 
   import ObsVariant._
@@ -552,15 +514,15 @@ object CNV
 
 
   implicit val profile =
-    Meta.Profiles[CNV]("http://bwhc.de/mtb/genetics-copy-number-variant")
+    Meta.Profiles[CopyNumberVariant]("http://bwhc.de/mtb/genetics-copy-number-variant")
 
   implicit val code =
-    Code[CNV,TBD_LOINC]("copy-number-Variant","Copy Number Variant")
+    Code[CopyNumberVariant,TBD_LOINC]("copy-number-Variant","Copy Number Variant")
 
 
   import org.hl7.fhir.r4.json._
   import json.backboneElements._
 
-  implicit val format = Json.format[CNV]
+  implicit val format = Json.format[CopyNumberVariant]
 
 }

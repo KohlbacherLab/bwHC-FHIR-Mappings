@@ -245,7 +245,6 @@ object ExtMetaData
 
 trait SomaticNGSReportProfile
 extends DiagnosticReportSC
-//extends DiagnosticReport
    with DiagnosticReport.identifierNel
    with DiagnosticReport.subject[Patient,Required]
    with DiagnosticReport.specimenNel[TumorSpecimenProfile]
@@ -265,6 +264,7 @@ extends DiagnosticReportSC
        val msi:            Option[ObsMSIProfile]
        val brcaness:       Option[ObsBRCAnessProfile]
        val simpleVariants: List[SimpleVariantProfile]
+       val copyNumberVariants: List[CopyNumberVariantProfile]
      }
    ]
 
@@ -314,7 +314,8 @@ object SomaticNGSReport
     tmb:            ObsTMB,
     msi:            Option[ObsMSI],
     brcaness:       Option[ObsBRCAness],
-    simpleVariants: List[SimpleVariant]
+    simpleVariants: List[SimpleVariant],
+    copyNumberVariants: List[CopyNumberVariant]
   )
   extends ContainedResources
 
