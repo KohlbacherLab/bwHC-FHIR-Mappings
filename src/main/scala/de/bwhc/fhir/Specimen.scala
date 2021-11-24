@@ -22,10 +22,8 @@ import CodingSystems._
 
 final case class SampleDiagnosis(
   value: CodeableConceptStatic[dtos.ICD10GM]
-//  value: BasicCodeableConcept[dtos.ICD10GM]
 )
 extends SimpleExtension[CodeableConceptStatic[dtos.ICD10GM]]
-//extends SimpleExtension[BasicCodeableConcept[dtos.ICD10GM]]
 
 object SampleDiagnosis
 {
@@ -77,9 +75,6 @@ final case class TumorSpecimen
   condition: Option[List[CodeableConceptStatic[dtos.Specimen.Type.Value]]],
   `type`: CodeableConceptStatic[HL7v2Table0487] =
      CodeableConceptStatic(CodingStatic[HL7v2Table0487]("TUMOR",Some("Tumor"),None)) 
-//  condition: Option[List[BasicCodeableConcept[dtos.Specimen.Type.Value]]],
-//  `type`: BasicCodeableConcept[HL7v2Table0487] =
-//     BasicCodeableConcept(BasicCoding[HL7v2Table0487]("TUMOR",Some("Tumor"))) 
 ) 
 extends TumorSpecimenProfile
 
@@ -92,28 +87,24 @@ object TumorSpecimen
     collectedDateTime: LocalDate,
     bodySite: CodeableConceptStatic[dtos.Specimen.Collection.Localization.Value],
     method: CodeableConceptStatic[dtos.Specimen.Collection.Method.Value]
-//    bodySite: BasicCodeableConcept[dtos.Specimen.Collection.Localization.Value],
-//    method: BasicCodeableConcept[dtos.Specimen.Collection.Method.Value]
   )
   extends Specimen.CollectionElement
      with Specimen.Collection.collectedDateTime[LocalDate,Required]
      with Specimen.Collection.bodySite[CodeableConceptStatic[dtos.Specimen.Collection.Localization.Value],Required]
      with Specimen.Collection.method[CodeableConceptStatic[dtos.Specimen.Collection.Method.Value],Required]
-//     with Specimen.Collection.bodySite[BasicCodeableConcept[dtos.Specimen.Collection.Localization.Value],Required]
-//     with Specimen.Collection.method[BasicCodeableConcept[dtos.Specimen.Collection.Method.Value],Required]
 
 
   implicit val profiles =
     Meta.Profiles[TumorSpecimen]("http://bwhc.de/mtb/tumor-specimen")
 
   implicit val typeSystem =
-    CodingSystem[dtos.Specimen.Type.Value]("bwhc-mtb-specimen-type")
+    CodingSystem[dtos.Specimen.Type.Value]("http://bwhc.de/mtb/tumor-specimen/type")
     
   implicit val localizationSystem =
-    CodingSystem[dtos.Specimen.Collection.Localization.Value]("bwhc-mtb-specimen-localization")
+    CodingSystem[dtos.Specimen.Collection.Localization.Value]("http://bwhc.de/mtb/tumor-specimen/localization")
     
   implicit val methodSystem =
-    CodingSystem[dtos.Specimen.Collection.Method.Value]("bwhc-mtb-specimen-collectionmethod")
+    CodingSystem[dtos.Specimen.Collection.Method.Value]("http://bwhc.de/mtb/tumor-specimen/collection-method")
 
 
 

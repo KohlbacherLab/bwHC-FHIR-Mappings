@@ -28,12 +28,10 @@ extends Condition
    with Condition.subject[Patient,Required]
    with Condition.code[
      CodeableConcept with CodeableConcept.codingNel[CodingStatic[ICD10GM]],
-//     CodeableConcept with CodeableConcept.codingNel[Coding[ICD10GM]],
      Optional
    ]
    with Condition.bodySite[
      CodeableConcept with CodeableConcept.codingNel[CodingStatic[ICDO3T]],
-//     CodeableConcept with CodeableConcept.codingNel[Coding[ICDO3T]],
      Optional
    ]
    with Condition.stages[
@@ -42,7 +40,6 @@ extends Condition
          Condition.StageElement
            with Condition.Stage.summary[
              CodeableConcept with CodeableConcept.codingNel[CodingStatic[dtos.Diagnosis.Status.Value]]
-//             CodeableConcept with CodeableConcept.codingNel[Coding[dtos.Diagnosis.Status.Value]]
            ]
            with Condition.Stage.extension[SimpleExtension[LocalDate],Optional]
        ],
@@ -69,8 +66,6 @@ case class Diagnosis
   recordedDate: Option[LocalDate],
   code: Option[CodeableConceptStatic[ICD10GM]],
   bodySite: Option[List[CodeableConceptStatic[ICDO3T]]],
-//  code: Option[BasicCodeableConcept[ICD10GM]],
-//  bodySite: Option[List[BasicCodeableConcept[ICDO3T]]],
   stage: (
            List[Diagnosis.Stage[dtos.Diagnosis.Status.Value]],
            Option[Diagnosis.Stage[WHOGrade.Value]]
@@ -99,11 +94,9 @@ object Diagnosis
   case class Stage[T](
     extension: Option[List[Stage.Date]],
     summary: CodeableConceptStatic[T]
-//    summary: BasicCodeableConcept[T]
   )
   extends Condition.StageElement
      with Condition.Stage.summary[CodeableConceptStatic[T]]
-//     with Condition.Stage.summary[BasicCodeableConcept[T]]
      with Condition.Stage.extension[Stage.Date,Optional]
 
 

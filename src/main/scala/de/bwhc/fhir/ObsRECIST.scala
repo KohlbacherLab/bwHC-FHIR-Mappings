@@ -45,7 +45,7 @@ object ObsRECIST
   import CodingSystems._
 
   implicit val profiles =
-    Meta.Profiles[ObsRECIST]("http://bwhc-mtb-therapy-response")
+    Meta.Profiles[ObsRECIST]("http://bwhc.de/mtb/obs-therapy-response")
     
   implicit val code = Code[ObsRECIST](LOINC("21976-6"))
 

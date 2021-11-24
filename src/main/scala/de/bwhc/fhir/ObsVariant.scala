@@ -28,6 +28,12 @@ object ObsVariant
     implicit val system = CodingSystem[HGNC]("https://www.genenames.org/")
   }
 
+  sealed trait Ensembl
+  object Ensembl
+  {
+    implicit val system = CodingSystem[Ensembl]("Ensembl")
+  }
+
   sealed trait HGVS
   object HGVS
   {
@@ -59,13 +65,20 @@ object ObsVariant
      with Observation.Component.valueString[Required]
  
 
+  final case class GeneStudied(valueCodeableConcept: CodeableConceptDynamic)
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueCodeableConcept[
+       CodeableConcept with CodeableConcept.codingNel[Coding],
+       Required
+     ]
+/* 
   final case class GeneStudied(valueCodeableConcept: CodeableConceptStatic[HGNC])
   extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
        CodeableConcept with CodeableConcept.codingNel[CodingStatic[HGNC]],
        Required
      ]
- 
+*/ 
 
   final case class FunctionalAnnotation(valueCodeableConcept: CodeableConceptStatic[SequenceOntology])
   extends Observation.ComponentElementSC
@@ -149,10 +162,19 @@ object ObsVariant
   extends Observation.ComponentElementSC
      with Observation.Component.valueQuantity[Quantity,Required]
 
+/*
   final case class ReportedAffectedGene(valueCodeableConcept: CodeableConceptStatic[HGNC])
   extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
        CodeableConcept with CodeableConcept.codingNel[CodingStatic[HGNC]],
+       Required
+     ]
+*/
+
+  final case class ReportedAffectedGene(valueCodeableConcept: CodeableConceptDynamic)
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueCodeableConcept[
+       CodeableConcept with CodeableConcept.codingNel[Coding],
        Required
      ]
 
@@ -168,11 +190,19 @@ object ObsVariant
        Required
      ]
 */
-
+/*
   final case class CopyNumberNeutralLoH(valueCodeableConcept: CodeableConceptStatic[HGNC])
   extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
        CodeableConcept with CodeableConcept.codingNel[CodingStatic[HGNC]],
+       Required
+     ]
+*/
+
+  final case class CopyNumberNeutralLoH(valueCodeableConcept: CodeableConceptDynamic)
+  extends Observation.ComponentElementSC
+     with Observation.Component.valueCodeableConcept[
+       CodeableConcept with CodeableConcept.codingNel[Coding],
        Required
      ]
 

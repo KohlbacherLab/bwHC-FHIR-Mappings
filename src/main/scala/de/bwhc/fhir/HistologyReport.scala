@@ -46,7 +46,6 @@ case class ObsTumorMorphology
   subject: LogicalReference[Patient],
   specimen: LogicalReference[Specimen],
   valueCodeableConcept: CodeableConceptStatic[ICDO3M],
-//  valueCodeableConcept: BasicCodeableConcept[ICDO3M],
   note: Option[List[Note]],
 )
 extends ObsTumorMorphologyProfile

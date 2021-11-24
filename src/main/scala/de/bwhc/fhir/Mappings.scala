@@ -788,17 +788,33 @@ object Mappings
     Identifier(id.value)
 
 
-  implicit val geneIdCodingToCodeableConcept: dtos.Coding[dtos.Variant.HgncId] => CodeableConceptStatic[ObsVariant.HGNC] = {
-    c =>
-      CodeableConceptStatic(
-        CodingStatic[ObsVariant.HGNC](c.code.value,c.display,None)
-      )
-  }
+  implicit val geneCodingToCodeableConcept: dtos.Gene.Coding => CodeableConceptDynamic = {
 
-  implicit val geneSymbolCodingToCodeableConcept: dtos.Coding[dtos.Variant.GeneSymbol] => CodeableConceptStatic[ObsVariant.HGNC] = {
-    c =>
-      CodeableConceptStatic(
-        CodingStatic[ObsVariant.HGNC](c.code.value,c.display,None)
+    gene =>
+
+      CodeableConceptDynamic(
+        NonEmptyList.fromListUnsafe(
+          gene.ensemblId.map(
+            id =>
+              CodingDynamic(
+                id.value,
+                gene.symbol.map(_.value),
+                CodingSystem[ObsVariant.Ensembl].uri.toString,
+                None
+              )
+          )
+          .toList ++
+          gene.hgncId.map(
+            id =>
+              CodingDynamic(
+                id.value,
+                gene.symbol.map(_.value),
+                CodingSystem[ObsVariant.HGNC].uri.toString,
+                None
+              )
+          ),
+        ),
+        None
       )
   }
 
@@ -819,8 +835,7 @@ object Mappings
         subject,
         SimpleVariant.Components(
           Chromosome(snv.chromosome.value),
-          snv.geneId.mapToF[CodeableConceptStatic[HGNC]]
-            .orElse(snv.gene.mapToF[CodeableConceptStatic[HGNC]])
+          snv.gene.mapToF[CodeableConceptDynamic]
             .map(GeneStudied(_))
             .toList,
           ExactStartEnd(
@@ -885,18 +900,14 @@ object Mappings
           ),
           cnv.cnA.map(SimpleQuantity(_)).map(CnA(_)),
           cnv.cnB.map(SimpleQuantity(_)).map(CnB(_)),
-          cnv.reportedAffectedGeneIds.map(_.mapToF[CodeableConceptStatic[HGNC]])
-            .orElse(
-               cnv.reportedAffectedGenes.map(_.mapToF[CodeableConceptStatic[HGNC]])
-             )
+          cnv.reportedAffectedGenes
              .getOrElse(List.empty)
+             .mapToF[CodeableConceptDynamic]
              .map(ReportedAffectedGene(_)),
           cnv.reportedFocality.map(ReportedFocality(_)),
-          cnv.copyNumberNeutralLoHIds.map(_.mapToF[CodeableConceptStatic[HGNC]])
-            .orElse(
-               cnv.copyNumberNeutralLoH.map(_.mapToF[CodeableConceptStatic[HGNC]])
-             )
+          cnv.copyNumberNeutralLoH
              .getOrElse(List.empty)
+             .mapToF[CodeableConceptDynamic]
              .map(CopyNumberNeutralLoH(_)),
         )
       )
@@ -912,7 +923,7 @@ object Mappings
       implicit val subject  = LogicalReference[MTBPatient](ngsReport.patient)
       implicit val specimen = LogicalReference[TumorSpecimen](ngsReport.specimen)
 
-      val tcc      = ngsReport.tumorCellContent.mapTo[ObsTumorCellContent]
+      val tcc      = ngsReport.tumorCellContent.mapToF[ObsTumorCellContent]
       val tmb      = ngsReport.tmb.mapTo[ObsTMB]
       val msi      = ngsReport.msi.mapToF[ObsMSI]
       val brcaness = ngsReport.brcaness.mapToF[ObsBRCAness]
@@ -939,9 +950,9 @@ object Mappings
         subject,
         NonEmptyList.one(specimen),
         NonEmptyList.of(
-          Reference.contained(tcc),
           Reference.contained(tmb),
         ) ++
+          tcc.map(Reference.contained(_)).toList ++
           msi.map(Reference.contained(_)).toList ++
           brcaness.map(Reference.contained(_)).toList ++
           snvs.map(Reference.contained(_)) ++

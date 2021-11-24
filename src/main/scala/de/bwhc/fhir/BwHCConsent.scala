@@ -25,8 +25,6 @@ final case class BwHCConsent
   scope: CodeableConceptStatic[Consent.Scope.Value],
   category: NonEmptyList[CodeableConceptStatic[LOINC]] =
     NonEmptyList.one(CodeableConceptStatic(CodingStatic[LOINC]("59284-0",None,None)))
-//  category: NonEmptyList[BasicCodeableConcept[LOINC]] =
-//    NonEmptyList.one(BasicCodeableConcept(BasicCoding[LOINC]("59284-0",None)))
 )
 extends BwHCConsentProfile
 
@@ -36,9 +34,7 @@ object BwHCConsent
 
   implicit val profiles = Meta.Profiles[BwHCConsent]("http://bwhc.de/consent")
     
-
   import org.hl7.fhir.r4.json._
-
     
   implicit val format = Json.format[BwHCConsent]
   

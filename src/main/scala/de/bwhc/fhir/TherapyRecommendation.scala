@@ -37,26 +37,20 @@ object LoE
 
   implicit val loeGrading =
     CodingSystem[LevelOfEvidence.Grading.Value]("mtb-level-of-evidence:grading")
-//    Coding.System[LevelOfEvidence.Grading.Value]("mtb-level-of-evidence:grading")
 
   implicit val loeAdd =
     CodingSystem[LevelOfEvidence.Addendum.Value]("mtb-level-of-evidence:addendum")
-//    Coding.System[LevelOfEvidence.Addendum.Value]("mtb-level-of-evidence:addendum")
 
 
   final case class Grade(
     value: CodingStatic[LevelOfEvidence.Grading.Value]
-//    value: BasicCoding[LevelOfEvidence.Grading.Value]
   )
   extends SimpleExtension[CodingStatic[LevelOfEvidence.Grading.Value]]
-//  extends SimpleExtension[BasicCoding[LevelOfEvidence.Grading.Value]]
 
   final case class Addendum(
     value: CodingStatic[LevelOfEvidence.Addendum.Value]
-//    value: BasicCoding[LevelOfEvidence.Addendum.Value]
   )
   extends SimpleExtension[CodingStatic[LevelOfEvidence.Addendum.Value]]
-//  extends SimpleExtension[BasicCoding[LevelOfEvidence.Addendum.Value]]
 
   object Grade
   {
@@ -194,8 +188,6 @@ final case class RebiopsyRequest
   intent: ServiceRequest.Intent.Value,
   subject: LogicalReference[Patient],
   authoredOn: Option[LocalDate],
-//  category: NonEmptyList[BasicCodeableConcept[SNOMEDCT]],
-//  code: BasicCodeableConcept[SNOMEDCT],
   specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
 )
 extends RebiopsyRequestProfile

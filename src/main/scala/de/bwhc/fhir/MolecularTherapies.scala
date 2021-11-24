@@ -76,15 +76,15 @@ object MolecularTherapy
 {
 
   implicit def profile[Th <: MolecularTherapy] =
-    Meta.Profiles[Th]("bwhc-mtb-molecular-therapy")
+    Meta.Profiles[Th]("http://bwhc.de/mtb/molecular-therapy")
 
   object Systems
   {
     implicit val stopReasonSystem =
-      CodingSystem[StopReason.Value]("bwhc-mtb-molecular-therapy-stopreason")
+      CodingSystem[StopReason.Value]("http://bwhc.de/mtb/molecular-therapy/stopreason")
 
     implicit val notDoneReasonSystem =
-      CodingSystem[NotDoneReason.Value]("bwhc-mtb-molecular-therapy-notdonereason")
+      CodingSystem[NotDoneReason.Value]("http://bwhc.de/mtb/molecular-therapy/notdonereason")
   }
 
   import Systems._
@@ -121,7 +121,6 @@ object MolecularTherapy
       }
     )
 
-
 }
 
 
@@ -133,7 +132,6 @@ final case class NotTakenMolecularTherapy
   subject: LogicalReference[MTBPatient],
   medicationReference: LiteralReference[MTBMedication],
   statusReason: NonEmptyList[CodeableConceptStatic[NotDoneReason.Value]],
-//  statusReason: NonEmptyList[BasicCodeableConcept[NotDoneReason.Value]],
   note: Option[List[Note]],
 )
 extends MolecularTherapy
@@ -156,7 +154,6 @@ final case class StoppedMolecularTherapy
   effectivePeriod: ClosedPeriod[LocalDate],
   dosage: Option[List[DosageDensity]],
   statusReason: NonEmptyList[CodeableConceptStatic[StopReason.Value]],
-//  statusReason: NonEmptyList[BasicCodeableConcept[StopReason.Value]],
   note: Option[List[Note]],
 )
 extends MolecularTherapy
@@ -228,7 +225,7 @@ extends MolecularTherapyHistoryProfile
 object MolecularTherapyHistory
 {
   implicit val profiles =
-    Meta.Profiles[MolecularTherapyHistory]("http://bwhc-molecular-therapy-history")
+    Meta.Profiles[MolecularTherapyHistory]("http://bwhc.de/mtb/molecular-therapy-history")
 
   implicit val format = Json.format[MolecularTherapyHistory]
 }

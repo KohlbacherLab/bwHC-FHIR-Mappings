@@ -41,7 +41,6 @@ extends GuidelineTherapyProfile
    with MedicationStatement.statusReason[
      CodeableConcept
        with CodeableConcept.codingNel[CodingStatic[GuidelineTherapy.StopReason.Value]],
-//       with CodeableConcept.codingNel[Coding[GuidelineTherapy.StopReason.Value]],
      Optional
    ]
 
@@ -55,7 +54,6 @@ final case class PreviousGuidelineTherapy
 (
   identifier: NonEmptyList[Identifier],
   extension: Option[List[TherapyLine]],
-//  extension: Option[Tuple1[TherapyLine]],
   contained: ContainedMedication,
   status: MedicationStatement.Status.Value,
   subject: LogicalReference[MTBPatient],
@@ -69,7 +67,6 @@ final case class LastGuidelineTherapy
 (
   identifier: NonEmptyList[Identifier],
   extension: Option[List[TherapyLine]],
-//  extension: Option[Tuple1[TherapyLine]],
   contained: ContainedMedication,
   status: MedicationStatement.Status.Value,
   statusReason: Optional[List[CodeableConceptStatic[GuidelineTherapy.StopReason.Value]]],
@@ -101,7 +98,7 @@ object LastGuidelineTherapy
 
 
   implicit val stopReasonSystem =
-    CodingSystem[GuidelineTherapy.StopReason.Value]("bwhc-mtb-guidelinetherapy-stopreason")
+    CodingSystem[GuidelineTherapy.StopReason.Value]("http://bwhc.de/mtb/guideline-therapy/stopreason")
 
     
   import json.contained._

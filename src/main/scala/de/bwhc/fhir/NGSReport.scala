@@ -44,7 +44,6 @@ case class ObsTumorCellContent
   subject: LogicalReference[MTBPatient],
   specimen: LogicalReference[TumorSpecimen],
   method: CodeableConceptStatic[TumorCellContent.Method.Value],
-//  method: BasicCodeableConcept[TumorCellContent.Method.Value],
   valueQuantity: SimpleQuantity
 )
 extends ObsTumorCellContentProfile
@@ -176,9 +175,7 @@ object ObsBRCAness
 
 final case class ExtSequencingType(
   value: CodingStatic[SequencingType]
-//  value: BasicCoding[SequencingType]
 ) extends SimpleExtension[CodingStatic[SequencingType]]
-//) extends SimpleExtension[BasicCoding[SequencingType]]
 
 object ExtSequencingType
 {
@@ -259,7 +256,7 @@ extends DiagnosticReportSC
    with DiagnosticReport.resultNel[Observation]
    with DiagnosticReport.contained[
      ContainedResources {
-       val tumorContent:   ObsTumorCellContentProfile
+       val tumorContent:   Option[ObsTumorCellContentProfile]
        val tmb:            ObsTMBProfile
        val msi:            Option[ObsMSIProfile]
        val brcaness:       Option[ObsBRCAnessProfile]
@@ -310,7 +307,7 @@ object SomaticNGSReport
 
   final case class Results
   (
-    tumorContent:   ObsTumorCellContent,
+    tumorContent:   Option[ObsTumorCellContent],
     tmb:            ObsTMB,
     msi:            Option[ObsMSI],
     brcaness:       Option[ObsBRCAness],

@@ -52,8 +52,6 @@ object MTBPatient
     organization: LogicalReference[HealthInsurance],
     relationship: NonEmptyList[CodeableConceptStatic[Contact.RelationshipType.Value]] =
       NonEmptyList.of(CodeableConceptStatic(CodingStatic(Contact.RelationshipType.I)))
-//    relationship: NonEmptyList[BasicCodeableConcept[Contact.RelationshipType.Value]] =
-//      NonEmptyList.of(BasicCodeableConcept(BasicCoding(Contact.RelationshipType.I)))
   ) extends Patient.ContactElement
        with Patient.Contact.organization[Required]
        with Patient.Contact.relationshipNel
@@ -85,7 +83,6 @@ object MTBPatient
     )
 
 
-//  implicit val formatPatient = FHIRJson.format[MTBPatient]
   implicit val formatPatient = Json.format[MTBPatient]
   
 }
