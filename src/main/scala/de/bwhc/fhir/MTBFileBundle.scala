@@ -66,6 +66,7 @@ object MTBFileBundle
     lastGLTherapies:            List[EntryOf[LastGuidelineTherapy]],
     ecogs:                      List[EntryOf[ObsECOG]],
     specimens:                  List[EntryOf[TumorSpecimen]],
+//TODO: Molecular Pathology Reports
     histology:                  List[EntryOf[HistologyReport]],
     ngsReports:                 List[EntryOf[SomaticNGSReport]],
     carePlans:                  List[EntryOf[MTBCarePlan]],

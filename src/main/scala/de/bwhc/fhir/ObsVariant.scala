@@ -547,7 +547,7 @@ object CopyNumberVariant
     Meta.Profiles[CopyNumberVariant]("http://bwhc.de/mtb/genetics-copy-number-variant")
 
   implicit val code =
-    Code[CopyNumberVariant,TBD_LOINC]("copy-number-Variant","Copy Number Variant")
+    Code[CopyNumberVariant,TBD_LOINC]("copy-number-variant","Copy Number Variant")
 
 
   import org.hl7.fhir.r4.json._

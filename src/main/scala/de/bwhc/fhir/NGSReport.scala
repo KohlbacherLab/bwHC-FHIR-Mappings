@@ -31,7 +31,6 @@ extends ObservationSC
    with Observation.method[
      CodeableConcept
        with CodeableConcept.codingNel[CodingStatic[TumorCellContent.Method.Value]],
-//       with CodeableConcept.codingNel[Coding[TumorCellContent.Method.Value]],
      Required
    ]
    with Observation.valueQuantity[Quantity,Required]
@@ -256,11 +255,11 @@ extends DiagnosticReportSC
    with DiagnosticReport.resultNel[Observation]
    with DiagnosticReport.contained[
      ContainedResources {
-       val tumorContent:   Option[ObsTumorCellContentProfile]
-       val tmb:            ObsTMBProfile
-       val msi:            Option[ObsMSIProfile]
-       val brcaness:       Option[ObsBRCAnessProfile]
-       val simpleVariants: List[SimpleVariantProfile]
+       val tumorCellContent:   Option[ObsTumorCellContentProfile]
+       val tmb:                ObsTMBProfile
+       val msi:                Option[ObsMSIProfile]
+       val brcaness:           Option[ObsBRCAnessProfile]
+       val simpleVariants:     List[SimpleVariantProfile]
        val copyNumberVariants: List[CopyNumberVariantProfile]
      }
    ]
@@ -307,11 +306,11 @@ object SomaticNGSReport
 
   final case class Results
   (
-    tumorContent:   Option[ObsTumorCellContent],
-    tmb:            ObsTMB,
-    msi:            Option[ObsMSI],
-    brcaness:       Option[ObsBRCAness],
-    simpleVariants: List[SimpleVariant],
+    tumorCellContent:   Option[ObsTumorCellContent],
+    tmb:                ObsTMB,
+    msi:                Option[ObsMSI],
+    brcaness:           Option[ObsBRCAness],
+    simpleVariants:     List[SimpleVariant],
     copyNumberVariants: List[CopyNumberVariant]
   )
   extends ContainedResources

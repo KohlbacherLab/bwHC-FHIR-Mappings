@@ -84,7 +84,7 @@ extends MedicationRequest
    with MedicationRequest.authoredOn[LocalDate,Optional]
    with MedicationRequest.priority[Optional]
    with MedicationRequest.medicationReference[Medication]
-   with MedicationRequest.supportingInformation[SomaticVariantProfile,Optional]
+   with MedicationRequest.supportingInformation[DomainResource,Optional]
 
 
 
@@ -100,7 +100,7 @@ final case class TherapyRecommendation
   subject: LogicalReference[MTBPatient],
   reasonReference: NonEmptyList[LogicalReference[Condition]],
   medicationReference: LiteralReference[Medication],
-  supportingInformation: Option[List[LogicalReference[SomaticVariantProfile]]]
+  supportingInformation: Option[List[LogicalReference[DomainResource]]]
 ) extends TherapyRecommendationProfile
 
 object TherapyRecommendation

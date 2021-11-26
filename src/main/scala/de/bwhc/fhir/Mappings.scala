@@ -344,7 +344,8 @@ object Mappings
                 st.extension.get.head.value
               )
             )
-        ).filterNot(_.isEmpty),
+        )
+        .filterNot(_.isEmpty),
   None  //TODO: Model guideline treatment status
       )
 
@@ -662,6 +663,16 @@ object Mappings
       )
   }
 
+  implicit def tumorCellContentFromFHIR: ObsTumorCellContent => dtos.TumorCellContent = {
+    obs =>
+      dtos.TumorCellContent(
+        dtos.TumorCellContent.Id(obs.id),
+        obs.specimen.identifier,
+        dtos.TumorCellContent.Method.withName(obs.method.coding.head.code),
+        obs.valueQuantity.value
+      )
+  }
+
 
   //---------------------------------------------------------------------------
   // Histology mappings
@@ -713,6 +724,34 @@ object Mappings
           tumorContent
         )
       )
+  }
+
+
+  implicit val tumorMorphologyFromFHIR: ObsTumorMorphology => dtos.TumorMorphology = {
+    obs =>
+      dtos.TumorMorphology(
+        dtos.TumorMorphology.Id(obs.id),
+        obs.subject.identifier,
+        obs.specimen.identifier,
+        dtos.Coding(
+          dtos.ICDO3M(obs.valueCodeableConcept.coding.head.code),
+          None
+        ),
+        obs.note.flatMap(_.headOption).map(_.text)
+      )
+  }
+
+
+  implicit val histologyReportFromFHIR: HistologyReport => dtos.HistologyReport = {
+   report =>
+     dtos.HistologyReport(
+        dtos.HistologyReport.Id(report.identifier.head.value),
+        report.subject.identifier,
+        report.specimen.head.identifier,
+        report.issuedOn,
+        report.contained.tumorMorphology.mapToF[dtos.TumorMorphology],
+        report.contained.tumorCellContent.mapToF[dtos.TumorCellContent],
+     )
   }
 
 
@@ -819,6 +858,21 @@ object Mappings
   }
 
 
+  implicit val geneCodingFromCodeableConcept: CodeableConceptDynamic => dtos.Gene.Coding = {
+    cc =>
+      dtos.Gene.Coding(
+        cc.coding
+          .find(_.system == CodingSystem[ObsVariant.Ensembl].uri.toString)
+          .map(c => dtos.Gene.EnsemblId(c.code)),
+        cc.coding
+          .find(_.system == CodingSystem[ObsVariant.HGNC].uri.toString)
+          .map(c => dtos.Gene.HgncId(c.code)),
+        None,
+        None
+      )
+  }
+
+
   implicit def simpleVariantToFHIR(
     implicit subject: LogicalReference[MTBPatient]
   ): dtos.SimpleVariant => SimpleVariant = {
@@ -869,7 +923,51 @@ object Mappings
           ),
         )
       )
-  }  
+  } 
+ 
+  implicit def simpleVariantFromFHIR: SimpleVariant => dtos.SimpleVariant = {
+    snv =>
+
+      import dtos.Variant._
+      import dtos.SimpleVariant._
+
+      dtos.SimpleVariant(
+        Id(snv.id),
+        dtos.Chromosome(snv.component.chromosome.valueString),
+        snv.component.geneStudied.headOption.map(_.valueCodeableConcept).mapToF[dtos.Gene.Coding],
+        StartEnd(
+          snv.component.exactStartEnd.valueRange.low.value.toLong,
+          snv.component.exactStartEnd.valueRange.high.map(_.value.toLong),
+        ),
+        Allele(snv.component.refAllele.valueString),
+        Allele(snv.component.altAllele.valueString),
+        snv.component.dnaChange.map(
+          c =>
+            dtos.Coding(
+              DNAChange(c.valueCodeableConcept.coding.head.code),
+              c.valueCodeableConcept.coding.head.display
+            )
+        ), 
+        snv.component.aminoAcidChange.map(
+          c =>
+            dtos.Coding(
+              AminoAcidChange(c.valueCodeableConcept.coding.head.code),
+              c.valueCodeableConcept.coding.head.display
+            )
+          
+        ), 
+        AllelicReadDepth(snv.component.allelicReadDepth.valueQuantity.value.toInt),
+        AllelicFrequency(snv.component.sampleAllelicFrequency.valueQuantity.value),
+        snv.identifier.flatMap(_.headOption).mapToF[CosmicId],
+        snv.component.dbSNPId.map(
+          c => DbSNPId(c.valueCodeableConcept.coding.head.code)
+        ),
+        dtos.Coding(
+          Interpretation(snv.interpretation.head.coding.head.code),
+          None
+        )        
+      )
+  }
 
 
   implicit def cnvToFHIR(
@@ -912,6 +1010,33 @@ object Mappings
         )
       )
   }  
+
+  implicit def cnvFromFHIR: CopyNumberVariant => dtos.CNV = {
+    cnv =>
+
+      import dtos.CNV._
+
+      dtos.CNV(
+        dtos.Variant.Id(cnv.id),
+        dtos.Chromosome(cnv.component.chromosome.valueString),
+        dtos.Variant.StartEnd(
+          cnv.component.startRange.valueRange.low.value.toLong,
+          cnv.component.startRange.valueRange.high.map(_.value.toLong),
+        ),
+        dtos.Variant.StartEnd(
+          cnv.component.endRange.valueRange.low.value.toLong,
+          cnv.component.endRange.valueRange.high.map(_.value.toLong),
+        ),
+        cnv.component.copyNumber.valueInteger,
+        cnv.component.relativeCopyNumber.valueQuantity.value,
+        cnv.component.cnA.map(_.valueQuantity.value),
+        cnv.component.cnB.map(_.valueQuantity.value),
+        Some(cnv.component.reportedAffectedGenes.map(_.valueCodeableConcept.mapTo[dtos.Gene.Coding])),
+        cnv.component.reportedFocality.map(_.valueString),
+    dtos.CNV.Type.LowLevelGain, //TODO TODO
+        Some(cnv.component.copyNumberNeutralLoH.map(_.valueCodeableConcept.mapTo[dtos.Gene.Coding]))
+      )
+  }
 
 
   implicit val ngsReportToFHIR: dtos.SomaticNGSReport => SomaticNGSReport = {
@@ -970,6 +1095,46 @@ object Mappings
   }
 
 
+  implicit val ngsReportFromFHIR: SomaticNGSReport => dtos.SomaticNGSReport = {
+
+    report =>
+       
+     import dtos.SomaticNGSReport._
+
+     dtos.SomaticNGSReport(
+       Id(report.identifier.head.value),
+       report.subject.identifier,
+       report.specimen.head.identifier,
+       report.issued,
+       SequencingType(report.extension.sequencingType.value.code),
+       report.extension.metadata.map(
+         m =>
+           MetaData(
+             m.kitType.value,
+             m.kitManufacturer.value,
+             m.sequencer.value,
+             dtos.ReferenceGenome(m.refGenome.value),
+             m.pipeline.map(_.value)
+           )
+       ),
+       report.contained.tumorCellContent.mapToF[dtos.TumorCellContent],
+       report.contained.brcaness.map(
+         obs => BRCAness(obs.valueQuantity.value)
+       ),
+       report.contained.msi.map(
+         obs => MSI(obs.valueQuantity.value)
+       ),
+       TMB(report.contained.tmb.valueQuantity.value),
+       Some(report.contained.simpleVariants.mapToF[dtos.SimpleVariant]),
+       Some(report.contained.copyNumberVariants.mapToF[dtos.CNV]),
+       None,
+       None,
+       None
+     )
+
+  }
+
+
   //---------------------------------------------------------------------------
   // CarePlan / TherapyRecommendation mappings
   //---------------------------------------------------------------------------
@@ -1022,7 +1187,12 @@ object Mappings
           LogicalReference[MTBPatient](rec.patient),
           NonEmptyList.one(LogicalReference[Condition](rec.diagnosis)),
           Reference.contained(med),
-     None //TODO: map supportingVariant 
+          Some(
+            rec.ngsReport.toList
+              .map(id => LogicalReference[SomaticNGSReportProfile](Identifier(id.value))) ++
+            rec.supportingVariants.getOrElse(List.empty)
+              .map(id => LogicalReference[SomaticVariantProfile](Identifier(id.value)))
+          )
         )
 
   }
@@ -1051,8 +1221,14 @@ object Mappings
                 .map(_.map(dtos.Coding(_,None)))
             )
           },
-  None, //TODO: NGS-Report ref.
-  None, //TODO: Variant ref.
+          rec.supportingInformation.flatMap(
+            _.find(_.`type` == Resource.Type[SomaticNGSReport])
+             .map(ref => dtos.SomaticNGSReport.Id(ref.identifier.value))
+          ),
+          rec.supportingInformation.map(
+            _.filter(_.`type` == Resource.Type[SomaticVariantProfile])
+             .map(ref => dtos.Variant.Id(ref.identifier.value))
+          )
         )
     }
 
@@ -1080,6 +1256,16 @@ object Mappings
      )
   }
 
+  implicit val counsellingReqFromFHIR: CounsellingRequest => dtos.GeneticCounsellingRequest = {
+    req =>
+      dtos.GeneticCounsellingRequest(
+        req.identifier.head,
+        req.subject.identifier,
+        req.authoredOn,
+        req.note.head.text
+      )
+  }
+
 
   implicit def rebiopsyReqIdFromIdentifier(id: Identifier) =
     dtos.RebiopsyRequest.Id(id.value)
@@ -1101,7 +1287,15 @@ object Mappings
      )
   }
 
-
+  implicit val rebiopsyReqFromFHIR: RebiopsyRequest => dtos.RebiopsyRequest = {
+    req =>
+      dtos.RebiopsyRequest(
+        req.identifier.head,
+        req.subject.identifier,
+        req.specimen.head.identifier,
+        req.authoredOn
+      )
+  }
 
 
   implicit def carePlanIdFromIdentifier(id: Identifier) =
@@ -1136,20 +1330,40 @@ object Mappings
 
   }
 
-  implicit val carePlanFromFHIR: MTBCarePlan => dtos.CarePlan = {
+  implicit def carePlanFromFHIR(
+    implicit
+    counsellingRequests: List[CounsellingRequest],
+    rebiopsyRequests: List[RebiopsyRequest]
+  ): MTBCarePlan => dtos.CarePlan = {
 
-    cp => 
+    cp =>
+
+ 
       dtos.CarePlan(
         dtos.CarePlan.Id(cp.identifier.head.value),
         cp.subject.identifier,
         cp.addresses.head.identifier,
         cp.created,
         cp.description,
-   None, //TODO TODO
-        Some(cp.activity.map(_.reference.identifier.mapTo[dtos.TherapyRecommendation.Id])).filterNot(_.isEmpty),
-        None, //TODO TODO
-   None, //TODO TODO
-   None //TODO TODO
+   None, //TODO TODO No Target Finding
+        Some(cp.activity.map(_.reference.identifier.mapTo[dtos.TherapyRecommendation.Id])),
+        cp.activity.map(_.reference)
+          .find(
+            ref =>
+              ref.`type` == Resource.Type[CounsellingRequest] &&
+              counsellingRequests.exists(_.identifier.head == ref.identifier)
+          )
+          .map(_.identifier),
+        Some(
+          cp.activity.map(_.reference)
+            .filter(
+              ref =>
+                ref.`type` == Resource.Type[RebiopsyRequest] &&
+                rebiopsyRequests.exists(_.identifier.head == ref.identifier)
+            )
+            .map(_.identifier)
+        ),
+   None //TODO TODO StudyInclusionRequest
       )
 
   }
@@ -1292,7 +1506,6 @@ object Mappings
           CompletedMolecularTherapy(
             identifier,
             ContainedMedication(medication),
-//            Tuple1(medication),
             basedOn,
             molTh.recordedOn,
             subject,
@@ -1500,29 +1713,32 @@ object Mappings
 
       val patient = bundle.entry.patient.mapTo[dtos.Patient]
 
+      implicit val counsellingRequests = bundle.entry.geneticCounsellingRequests.map(_.resource)
+      implicit val rebiopsyRequests    = bundle.entry.rebiopsyRequests.map(_.resource)
+
       dtos.MTBFile(
         patient,
         bundle.entry.consent.mapTo[dtos.Consent],
         bundle.entry.episode.mapTo[dtos.MTBEpisode],
-        Some(bundle.entry.diagnoses.map(_.mapTo[dtos.Diagnosis])).filterNot(_.isEmpty),
-        Some(bundle.entry.familyMemberDiagnoses.map(_.mapTo[dtos.FamilyMemberDiagnosis])).filterNot(_.isEmpty),
-        Some(bundle.entry.previousGLTherapies.map(_.mapTo[dtos.PreviousGuidelineTherapy])),
-        Some(bundle.entry.lastGLTherapies.map(_.mapTo[dtos.LastGuidelineTherapy])),
-        Some(bundle.entry.ecogs.map(_.mapTo[dtos.ECOGStatus])),
-        Some(bundle.entry.specimens.map(_.mapTo[dtos.Specimen])),
+        Some(bundle.entry.diagnoses.mapToF[dtos.Diagnosis]),
+        Some(bundle.entry.familyMemberDiagnoses.mapToF[dtos.FamilyMemberDiagnosis]),
+        Some(bundle.entry.previousGLTherapies.mapToF[dtos.PreviousGuidelineTherapy]),
+        Some(bundle.entry.lastGLTherapies.mapToF[dtos.LastGuidelineTherapy]),
+        Some(bundle.entry.ecogs.mapToF[dtos.ECOGStatus]),
+        Some(bundle.entry.specimens.mapToF[dtos.Specimen]),
+    None, //TODO
+        Some(bundle.entry.histology.mapToF[dtos.HistologyReport]),
+        Some(bundle.entry.ngsReports.mapToF[dtos.SomaticNGSReport]),
+        Some(bundle.entry.carePlans.mapToF[dtos.CarePlan]),
+        Some(bundle.entry.therapyRecommendations.mapToF[dtos.TherapyRecommendation]),
+        Some(bundle.entry.geneticCounsellingRequests.mapToF[dtos.GeneticCounsellingRequest]),
+        Some(bundle.entry.rebiopsyRequests.mapToF[dtos.RebiopsyRequest]),
     None, //TODO
     None, //TODO
-    None, //TODO
-        Some(bundle.entry.carePlans.map(_.mapTo[dtos.CarePlan])),
-        Some(bundle.entry.therapyRecommendations.map(_.mapTo[dtos.TherapyRecommendation])),
-    None, //TODO
-    None, //TODO
-    None, //TODO
-    None, //TODO
-    None, //TODO
-    None, //TODO
-        Some(bundle.entry.molecularTherapies.map(_.mapTo[dtos.MolecularTherapyDocumentation])),
-        Some(bundle.entry.responses.map(_.mapTo[dtos.Response])),
+        Some(bundle.entry.claims.mapToF[dtos.Claim]),
+        Some(bundle.entry.claimResponses.mapToF[dtos.ClaimResponse]),
+        Some(bundle.entry.molecularTherapies.mapToF[dtos.MolecularTherapyDocumentation]),
+        Some(bundle.entry.responses.mapToF[dtos.Response]),
       )
 
   }
