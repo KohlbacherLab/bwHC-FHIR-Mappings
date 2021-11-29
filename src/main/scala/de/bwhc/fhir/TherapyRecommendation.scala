@@ -54,17 +54,17 @@ object LoE
 
   object Grade
   {
-    implicit val url    = Extension.Url[Grade]("mtb-level-of-evidence:grading")
+    implicit val url    = Extension.Url[Grade]("http://bwhc.de/mtb/therapy-recommendation/level-of-evidence/grading")
     implicit val format = json.extensions.format(Grade(_))
   }
 
   object Addendum
   {
-    implicit val url    = Extension.Url[Addendum]("mtb-level-of-evidence:addendum")
+    implicit val url    = Extension.Url[Addendum]("http://bwhc.de/mtb/therapy-recommendation/level-of-evidence/addendum")
     implicit val format = json.extensions.format(Addendum(_))
   }
 
-  implicit val url       = Extension.Url[LoE]("mtb-level-of-evidence")
+  implicit val url       = Extension.Url[LoE]("http://bwhc.de/mtb/therapy-recommendation/level-of-evidence")
   implicit val formatLoE = json.extensions.format[LoE]
 
 }

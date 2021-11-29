@@ -33,7 +33,6 @@ extends ObservationSC
    with Observation.specimen[Required]
    with Observation.valueCodeableConcept[
      CodeableConcept with CodeableConcept.codingNel[CodingStatic[ICDO3M]],
-//     CodeableConcept with CodeableConcept.codingNel[Coding[ICDO3M]],
      Required
    ]
    with Observation.note[Annotation,Optional]

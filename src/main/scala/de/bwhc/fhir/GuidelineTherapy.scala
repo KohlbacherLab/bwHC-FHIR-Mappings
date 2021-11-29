@@ -21,7 +21,7 @@ import de.bwhc.mtb.data.entry.dtos.GuidelineTherapy
 final case class TherapyLine(value: PositiveInt) extends SimpleExtension[PositiveInt]
 object TherapyLine
 {
-  implicit val url    = Extension.Url[TherapyLine]("therapy-line")
+  implicit val url    = Extension.Url[TherapyLine]("http://bwhc.de/mtb/guideline-therapy/therapy-line")
   implicit val format = json.extensions.format(TherapyLine(_))
 }
 
@@ -30,7 +30,11 @@ sealed trait GuidelineTherapyProfile
 extends MedicationStatement
    with MedicationStatement.identifierNel
    with MedicationStatement.extension[TherapyLine,Optional]
-   with MedicationStatement.contained[ContainedResources { val medication: MTBMedicationProfile }]
+   with MedicationStatement.contained[
+     ContainedResources {
+       val medication: MTBMedicationProfile
+     }
+   ]
    with MedicationStatement.subject[Patient,Required]
    with MedicationStatement.reasonReferenceNel
    with MedicationStatement.medicationReference[MTBMedicationProfile]

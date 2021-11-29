@@ -87,7 +87,7 @@ object Diagnosis
   {
     final case class Date(value: LocalDate) extends SimpleExtension[LocalDate]
 
-    implicit val url    = Extension.Url[Date]("tumor-stage-date")
+    implicit val url    = Extension.Url[Date]("http://bwhc.de/mtb/diagnosis/tumor-stage-date")
     implicit val format = json.extensions.format(Date)
   }
 
