@@ -270,13 +270,13 @@ object Mappings
 
           )
         ),
-        (
+        Diagnosis.Stages(
           diag.statusHistory.map(sts =>
             sts.map(st =>
               Diagnosis.Stage(
                 Some(List(Diagnosis.Stage.Date(st.date))),
                 CodeableConceptStatic( 
-                  CodingStatic[dtos.Diagnosis.Status.Value](st.status.toString, None, None)
+                  CodingStatic[dtos.Diagnosis.Status.Value](st.status.toString,None,None)
                 )
               ) 
             )
@@ -286,7 +286,7 @@ object Mappings
             Diagnosis.Stage(
               diag.recordedOn.map(d => List(Diagnosis.Stage.Date(d))),
               CodeableConceptStatic(
-                CodingStatic[dtos.WHOGrade.Value](who.code.toString,who.display, None)
+                CodingStatic[dtos.WHOGrade.Value](who.code.toString,who.display,None)
               )
             )
           )
@@ -295,7 +295,14 @@ object Mappings
           ids => ids.map(
             id => Diagnosis.HistologyEvidence(NonEmptyList.one(Reference[ObsHistology](id)))
           )
+        ),
+        diag.guidelineTreatmentStatus.map(
+          gl =>
+              DiagnosisProfile.GuidelineTreatmentStatus(
+                CodingStatic[dtos.GuidelineTreatmentStatus.Value](gl.toString,None,None)
+              )
         )
+        .map(List(_))
       )  
   }
 
@@ -325,7 +332,7 @@ object Mappings
               icdO3t.version
             )
           ),
-        diag.stage._2
+        diag.stage.whoGrade
           .map(_.summary.coding.head)
           .map(who =>
             dtos.Coding(
@@ -337,16 +344,18 @@ object Mappings
           _.flatMap(_.detail.toList.map(_.identifier))
         ),
         Option(
-          diag.stage._1
+          diag.stage.tumorStages
             .map(st =>
               dtos.Diagnosis.StatusOnDate( 
                 dtos.Diagnosis.Status.withName(st.summary.coding.head.code),
                 st.extension.get.head.value
               )
             )
-        )
-        .filterNot(_.isEmpty),
-  None  //TODO: Model guideline treatment status
+        ),
+        diag.extension.flatMap(_.headOption)
+          .map(
+            ext => dtos.GuidelineTreatmentStatus.withName(ext.value.code) 
+          )
       )
 
   }
@@ -535,8 +544,7 @@ object Mappings
   }
 
 
-  implicit val lastGLTherapyToFHIR:
-    dtos.LastGuidelineTherapy => LastGuidelineTherapy = {
+  implicit val lastGLTherapyToFHIR: dtos.LastGuidelineTherapy => LastGuidelineTherapy = {
 
     th =>
 
@@ -559,8 +567,7 @@ object Mappings
   }
 
 
-  implicit val lastGLTherapyFromFHIR:
-   LastGuidelineTherapy => dtos.LastGuidelineTherapy = {
+  implicit val lastGLTherapyFromFHIR: LastGuidelineTherapy => dtos.LastGuidelineTherapy = {
       
     import dtos.GuidelineTherapy.StopReason
 
@@ -754,6 +761,42 @@ object Mappings
      )
   }
 
+  //---------------------------------------------------------------------------
+  // Molecular Pathology Report mappings
+  //---------------------------------------------------------------------------
+
+  implicit val molPathoReportToFHIR: dtos.MolecularPathologyFinding => MolecularPathologyReport = {
+    report =>
+
+      MolecularPathologyReport(
+        NonEmptyList.one(Identifier(report.id.value)),
+        report.issuedOn,
+        DiagnosticReport.Status.Final,
+        LogicalReference[MTBPatient](report.patient),
+        NonEmptyList.one(LogicalReference[TumorSpecimen](report.specimen)),
+        report.performingInstitute.map(
+          dept => LogicalReference[Organization](Identifier(dept.value))
+        )
+        .map(List(_)),
+        report.note
+      )
+
+  }
+
+  implicit val molPathoReportFromFHIR: MolecularPathologyReport => dtos.MolecularPathologyFinding = {
+    report =>
+
+      dtos.MolecularPathologyFinding(
+        dtos.MolecularPathologyFinding.Id(report.identifier.head.value),
+        report.subject.identifier,
+        report.specimen.head.identifier,
+        report.performer.flatMap(_.headOption).map(
+          ref => dtos.PathologyDept(ref.identifier.value)
+        ),
+        report.issued,
+        report.conclusion
+      )
+  }
 
   //---------------------------------------------------------------------------
   // Somatic NGS Report mappings
@@ -1693,6 +1736,7 @@ object Mappings
           mtbfile.lastGuidelineTherapies.getOrElse(List.empty).map(_.mapTo[LastGuidelineTherapy]),
           mtbfile.ecogStatus.getOrElse(List.empty).map(_.mapTo[ObsECOG]),
           mtbfile.specimens.getOrElse(List.empty).map(_.mapTo[TumorSpecimen]),
+          mtbfile.molecularPathologyFindings.getOrElse(List.empty).map(_.mapTo[MolecularPathologyReport]),
           mtbfile.histologyReports.getOrElse(List.empty).map(_.mapTo[HistologyReport]),
           mtbfile.ngsReports.getOrElse(List.empty).map(_.mapTo[SomaticNGSReport]),
           mtbfile.carePlans.getOrElse(List.empty).map(_.mapTo[MTBCarePlan]),
@@ -1726,7 +1770,7 @@ object Mappings
         Some(bundle.entry.lastGLTherapies.mapToF[dtos.LastGuidelineTherapy]),
         Some(bundle.entry.ecogs.mapToF[dtos.ECOGStatus]),
         Some(bundle.entry.specimens.mapToF[dtos.Specimen]),
-    None, //TODO
+        Some(bundle.entry.molecularPathology.mapToF[dtos.MolecularPathologyFinding]),
         Some(bundle.entry.histology.mapToF[dtos.HistologyReport]),
         Some(bundle.entry.ngsReports.mapToF[dtos.SomaticNGSReport]),
         Some(bundle.entry.carePlans.mapToF[dtos.CarePlan]),

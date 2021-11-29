@@ -81,10 +81,10 @@ object MolecularTherapy
   object Systems
   {
     implicit val stopReasonSystem =
-      CodingSystem[StopReason.Value]("http://bwhc.de/mtb/molecular-therapy/stopreason")
+      CodingSystem[StopReason.Value]("http://bwhc.de/mtb/molecular-therapy/stop-reason")
 
     implicit val notDoneReasonSystem =
-      CodingSystem[NotDoneReason.Value]("http://bwhc.de/mtb/molecular-therapy/notdonereason")
+      CodingSystem[NotDoneReason.Value]("http://bwhc.de/mtb/molecular-therapy/not-done-reason")
   }
 
   import Systems._

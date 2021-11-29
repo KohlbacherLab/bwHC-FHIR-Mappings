@@ -23,6 +23,9 @@ object CodingSystems
 
   implicit val icdO3mSystem =
     CodingSystem[ICDO3M]("urn:oid:2.16.840.1.113883.6.43.1")
+
+  implicit val guidelineTreatmenStatusSystem =
+    CodingSystem[GuidelineTreatmentStatus.Value]("http://bwhc.de/mtb/diagnosis/guideline-treatment-status")
   
 
   implicit val whoCnsGradeSystem =

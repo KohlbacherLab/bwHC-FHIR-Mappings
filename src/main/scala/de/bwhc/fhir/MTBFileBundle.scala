@@ -26,12 +26,15 @@ extends Bundle.Collection
        val lastGLTherapies:            List[EntryElement with Entry.resource[LastGuidelineTherapyProfile]]
        val ecogs:                      List[EntryElement with Entry.resource[ObsECOGProfile]]
        val specimens:                  List[EntryElement with Entry.resource[TumorSpecimenProfile]]
+       val molecularPathology:         List[EntryElement with Entry.resource[MolecularPathologyReport]]
        val histology:                  List[EntryElement with Entry.resource[HistologyReportProfile]]
        val ngsReports:                 List[EntryElement with Entry.resource[SomaticNGSReportProfile]]
        val carePlans:                  List[EntryElement with Entry.resource[MTBCarePlanProfile]]
        val therapyRecommendations:     List[EntryElement with Entry.resource[TherapyRecommendationProfile]]
        val geneticCounsellingRequests: List[EntryElement with Entry.resource[CounsellingRequestProfile]]
        val rebiopsyRequests:           List[EntryElement with Entry.resource[RebiopsyRequestProfile]]
+//TODO: histologyReevaluation
+//TODO: studyInclusion
        val claims:                     List[EntryElement with Entry.resource[ClaimProfile]]
        val claimResponses:             List[EntryElement with Entry.resource[ClaimResponseProfile]]
        val molecularTherapies:         List[EntryElement with Entry.resource[MolecularTherapyHistoryProfile]]
@@ -66,7 +69,7 @@ object MTBFileBundle
     lastGLTherapies:            List[EntryOf[LastGuidelineTherapy]],
     ecogs:                      List[EntryOf[ObsECOG]],
     specimens:                  List[EntryOf[TumorSpecimen]],
-//TODO: Molecular Pathology Reports
+    molecularPathology:         List[EntryOf[MolecularPathologyReport]],
     histology:                  List[EntryOf[HistologyReport]],
     ngsReports:                 List[EntryOf[SomaticNGSReport]],
     carePlans:                  List[EntryOf[MTBCarePlan]],

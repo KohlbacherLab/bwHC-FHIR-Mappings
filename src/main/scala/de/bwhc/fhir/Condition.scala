@@ -21,6 +21,24 @@ import de.bwhc.mtb.data.entry.dtos.{
 import CodingSystems._
 
 
+object DiagnosisProfile
+{
+
+  final case class GuidelineTreatmentStatus
+  (
+    value: CodingStatic[dtos.GuidelineTreatmentStatus.Value]
+  )
+  extends SimpleExtension[CodingStatic[dtos.GuidelineTreatmentStatus.Value]]
+
+  object GuidelineTreatmentStatus
+  {
+    implicit val url    = Extension.Url[GuidelineTreatmentStatus]("http://bwhc.de/mtb/diagnosis/guideline-treatment-status")
+    implicit val format = json.extensions.format(GuidelineTreatmentStatus(_))
+  }
+
+}
+
+
 trait DiagnosisProfile
 extends Condition
    with Condition.identifierNel
@@ -35,28 +53,31 @@ extends Condition
      Optional
    ]
    with Condition.stages[
-     Product2[
-       List[
+     Product {
+       val tumorStages: List[
          Condition.StageElement
            with Condition.Stage.summary[
              CodeableConcept with CodeableConcept.codingNel[CodingStatic[dtos.Diagnosis.Status.Value]]
            ]
            with Condition.Stage.extension[SimpleExtension[LocalDate],Optional]
-       ],
-       Option[
+       ]
+
+       val whoGrade: Option[
          Condition.StageElement
          with Condition.Stage.summary[
            CodeableConcept with CodeableConcept.codingNel[CodingStatic[WHOGrade.Value]]
          ]
          with Condition.Stage.extension[SimpleExtension[LocalDate],Optional]
        ]
-     ],
+     },
      Required
    ]
    with Condition.evidence[
      Condition.EvidenceElement with Condition.Evidence.detail[ObsHistologyProfile],
      Optional
    ]
+   with Condition.extension[DiagnosisProfile.GuidelineTreatmentStatus,Optional]
+
 
 
 case class Diagnosis
@@ -66,11 +87,9 @@ case class Diagnosis
   recordedDate: Option[LocalDate],
   code: Option[CodeableConceptStatic[ICD10GM]],
   bodySite: Option[List[CodeableConceptStatic[ICDO3T]]],
-  stage: (
-           List[Diagnosis.Stage[dtos.Diagnosis.Status.Value]],
-           Option[Diagnosis.Stage[WHOGrade.Value]]
-         ),
-  evidence: Option[List[Diagnosis.HistologyEvidence]]
+  stage: Diagnosis.Stages,
+  evidence: Option[List[Diagnosis.HistologyEvidence]],
+  extension: Option[List[DiagnosisProfile.GuidelineTreatmentStatus]]
 )
 extends DiagnosisProfile
 
@@ -98,6 +117,11 @@ object Diagnosis
   extends Condition.StageElement
      with Condition.Stage.summary[CodeableConceptStatic[T]]
      with Condition.Stage.extension[Stage.Date,Optional]
+
+  final case class Stages(
+    tumorStages: List[Diagnosis.Stage[dtos.Diagnosis.Status.Value]],
+    whoGrade: Option[Diagnosis.Stage[WHOGrade.Value]]
+  )
 
 
   case class HistologyEvidence(

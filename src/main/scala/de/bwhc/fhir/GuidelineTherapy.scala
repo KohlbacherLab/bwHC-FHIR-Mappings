@@ -102,7 +102,7 @@ object LastGuidelineTherapy
 
 
   implicit val stopReasonSystem =
-    CodingSystem[GuidelineTherapy.StopReason.Value]("http://bwhc.de/mtb/guideline-therapy/stopreason")
+    CodingSystem[GuidelineTherapy.StopReason.Value]("http://bwhc.de/mtb/guideline-therapy/stop-reason")
 
     
   import json.contained._
