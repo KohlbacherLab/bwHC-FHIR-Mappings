@@ -8,7 +8,6 @@ import java.util.UUID.{randomUUID => rndID}
 
 import cats.data.NonEmptyList
 
-//import de.bwhc.util.mapping.syntax._
 import de.bwhc.mtb.data.entry.dtos
 
 import org.hl7.fhir.r4._
@@ -1436,9 +1435,13 @@ object Mappings
   }
 */
 
-  implicit val carePlanToFHIR: dtos.CarePlan => MTBCarePlan = {
+  implicit def carePlanToFHIR(
+    implicit studyInclusionReqs: List[dtos.StudyInclusionRequest]
+  ): dtos.CarePlan => MTBCarePlan = {
+//  implicit val carePlanToFHIR: dtos.CarePlan => MTBCarePlan = {
 
     cp => 
+
       MTBCarePlan(        
         NonEmptyList.one(cp.id.mapTo[Identifier]),
         CarePlan.Status.Unknown,
@@ -1463,8 +1466,22 @@ object Mappings
             cp.rebiopsyRequests.getOrElse(List.empty)
               .map(LogicalReference[RebiopsyRequest](_))
           )
-          .map(MTBCarePlan.RequestReference(_))
-          
+          .map(MTBCarePlan.RequestReference(_)),
+          MTBCarePlan.StudyInclusionRequests(
+            CarePlan.Activity.Detail.Status.Scheduled,
+            CodeableConceptDynamic(CodingDynamic("study-inclusion-requests",Some("Study Inclusion Requests"),"-",None)),
+            studyInclusionReqs.map(
+              req =>
+                MTBCarePlan.NCTStudyReference(
+                  LogicalReference[ResearchStudy](
+                    Identifier(
+                      req.nctNumber.value,
+                      Some(java.net.URI.create("https://clinicaltrials.gov/"))
+                    )
+                  )
+                )
+            )
+          )
         )
       )
 
@@ -1492,8 +1509,10 @@ object Mappings
               cp.created,
             )
         ),
-        Some(cp.activity.references.map(_.reference.identifier.mapTo[dtos.TherapyRecommendation.Id])),
-        cp.activity.references.map(_.reference)
+        Some(
+          cp.activity.requests.map(_.reference.identifier.mapTo[dtos.TherapyRecommendation.Id])
+        ),
+        cp.activity.requests.map(_.reference)
           .find(
             ref =>
               ref.`type` == Resource.Type[CounsellingRequest] &&
@@ -1501,7 +1520,7 @@ object Mappings
           )
           .map(_.identifier),
         Some(
-          cp.activity.references.map(_.reference)
+          cp.activity.requests.map(_.reference)
             .filter(
               ref =>
                 ref.`type` == Resource.Type[RebiopsyRequest] &&
@@ -1826,7 +1845,9 @@ object Mappings
       implicit def toBundleEntry[R <: Resource](r: R): EntryOf[R] = EntryOf(r)
 
       implicit val pat = mtbfile.patient
-      
+
+      implicit val studyInclusionReqs = mtbfile.studyInclusionRequests.getOrElse(List.empty)  
+    
       MTBFileBundle(
         MTBFileBundle.Entries(
           mtbfile.patient.mapTo[MTBPatient],
