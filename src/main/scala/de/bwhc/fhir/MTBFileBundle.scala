@@ -33,7 +33,7 @@ extends Bundle.Collection
        val therapyRecommendations:     List[EntryElement with Entry.resource[TherapyRecommendationProfile]]
        val geneticCounsellingRequests: List[EntryElement with Entry.resource[CounsellingRequestProfile]]
        val rebiopsyRequests:           List[EntryElement with Entry.resource[RebiopsyRequestProfile]]
-//TODO: histologyReevaluation
+//       val histologyReevaluationRequests: List[EntryElement with Entry.resource[HistologyReevaluationRequestProfile]]
 //TODO: studyInclusion
        val claims:                     List[EntryElement with Entry.resource[ClaimProfile]]
        val claimResponses:             List[EntryElement with Entry.resource[ClaimResponseProfile]]
@@ -76,6 +76,7 @@ object MTBFileBundle
     therapyRecommendations:     List[EntryOf[TherapyRecommendation]],
     geneticCounsellingRequests: List[EntryOf[CounsellingRequest]],
     rebiopsyRequests:           List[EntryOf[RebiopsyRequest]],
+//    histologyReevaluationRequests: List[EntryOf[HistologyReevaluationRequest]],
     claims:                     List[EntryOf[ClaimDTO]],
     claimResponses:             List[EntryOf[ClaimResponseDTO]],
     molecularTherapies:         List[EntryOf[MolecularTherapyHistory]],

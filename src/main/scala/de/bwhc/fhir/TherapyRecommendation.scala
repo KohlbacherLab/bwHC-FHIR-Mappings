@@ -206,6 +206,49 @@ object RebiopsyRequest
 
 
 //-----------------------------------------------------------------------------
+// Histology Reeavaluation Request
+//-----------------------------------------------------------------------------
+
+trait HistologyReevaluationRequestProfile
+extends ServiceRequest
+   with ServiceRequest.identifierNel
+   with ServiceRequest.subject[Patient]
+   with MedicationRequest.authoredOn[LocalDate,Optional]
+//   with ServiceRequest.categoryNel[
+//     CodeableConcept with CodeableConcept.codingNel[Coding[SNOMEDCT]]
+//   ]
+//   with ServiceRequest.code[
+//     CodeableConcept with CodeableConcept.codingNel[Coding[SNOMEDCT]],
+//       Required
+//   ]
+   with ServiceRequest.specimenNel
+
+
+final case class HistologyReevaluationRequest
+(
+  identifier: NonEmptyList[Identifier],
+  status: ServiceRequest.Status.Value,
+  intent: ServiceRequest.Intent.Value,
+  subject: LogicalReference[Patient],
+  authoredOn: Option[LocalDate],
+  specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
+)
+extends HistologyReevaluationRequestProfile
+
+object HistologyReevaluationRequest
+{
+
+  implicit val profiles =
+    Meta.Profiles[HistologyReevaluationRequest]("http://bwhc.de/mtb/histology-reevaluation-request")
+  
+  import org.hl7.fhir.r4.json._
+
+  implicit val format = Json.format[HistologyReevaluationRequest]
+
+}
+
+
+//-----------------------------------------------------------------------------
 // MTB CarePlan
 //-----------------------------------------------------------------------------
 
@@ -216,11 +259,22 @@ extends CarePlan
    with CarePlan.addressesNel
    with CarePlan.created[LocalDate,Optional]
    with CarePlan.description[Optional]
-   with CarePlan.activity[
-     CarePlan.ActivityElement with CarePlan.Activity.reference[DomainResource with Request],
+   with CarePlan.activities[
+     CarePlan.ActivitySet {
+       val noTarget: Option[
+         CarePlan.Activity.DetailElement
+           with CarePlan.Activity.Detail.statusReason[
+             CodeableConceptDynamic, Required
+           ]
+       ]
+       val references: List[CarePlan.ActivityElement with CarePlan.Activity.reference[DomainResource with Request]]
+     },
      Required
    ]
-
+//   with CarePlan.activity[
+//     CarePlan.ActivityElement with CarePlan.Activity.reference[DomainResource with Request],
+//     Required
+//   ]
 
 final case class MTBCarePlan
 (
@@ -231,7 +285,8 @@ final case class MTBCarePlan
   subject: LogicalReference[MTBPatient],
   addresses: NonEmptyList[LogicalReference[Diagnosis]],
   description: Option[String],
-  activity: List[MTBCarePlan.Activity] 
+  activity: MTBCarePlan.Activities 
+//  activity: List[MTBCarePlan.Activity] 
 )
 extends MTBCarePlanProfile
 
@@ -241,7 +296,8 @@ object MTBCarePlan
 
   implicit val profiles =
     Meta.Profiles[MTBCarePlan]("http://bwhc.de/mtb/careplan")
-  
+
+/*  
   case class Activity
   (
     reference: LogicalReference[DomainResource with Request]
@@ -250,11 +306,41 @@ object MTBCarePlan
      with CarePlan.Activity.reference[DomainResource with Request]
 
 
+  implicit val formatActivity = Json.format[Activities]
+*/
+
+  final case class NoTarget
+  (
+    status: CarePlan.Activity.Detail.Status.Value,
+    statusReason: CodeableConceptDynamic
+  )
+  extends CarePlan.Activity.DetailElement
+     with CarePlan.Activity.Detail.statusReason[CodeableConceptDynamic,Required]
+
+  implicit val formatNoTarget = Json.format[NoTarget]
+
+  final case class RequestReference
+  (
+    reference: LogicalReference[DomainResource with Request]
+  )
+  extends CarePlan.ActivityElement
+     with CarePlan.Activity.reference[DomainResource with Request]
+
+  implicit val formatRequestReference = Json.format[RequestReference]
+
+
+  final case class Activities
+  (
+    noTarget: Option[NoTarget],
+    references: List[RequestReference]
+  ) extends CarePlan.ActivitySet
+
+
+
+
   import org.hl7.fhir.r4.json._
   import org.hl7.fhir.r4.json.backboneElements._
 
-
-  implicit val formatActivity = Json.format[Activity]
 
   implicit val format = Json.format[MTBCarePlan]
   
