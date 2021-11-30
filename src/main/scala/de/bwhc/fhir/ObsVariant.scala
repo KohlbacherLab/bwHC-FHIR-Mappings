@@ -10,6 +10,8 @@ import org.hl7.fhir.r4.Observation._
 
 import play.api.libs.json.Json
 
+import de.bwhc.mtb.data.entry.dtos.CNV 
+
 
 abstract class ObsVariant extends ObservationSC
 
@@ -55,8 +57,12 @@ object ObsVariant
   sealed trait TBD_LOINC
   object TBD_LOINC
   {
-    implicit val system = CodingSystem[TBD_LOINC]("http://hl7.org/fhir/uv/genomics-reporting/CodeSystem/tbd-codes")
+    implicit val system =
+      CodingSystem[TBD_LOINC]("http://hl7.org/fhir/uv/genomics-reporting/CodeSystem/tbd-codes")
   }
+
+  implicit val cnvTypeSystem =
+    CodingSystem[CNV.Type.Value]("http://bwhc.de/mtb/genetics-copy-number-variant/type")
 
 
 
@@ -71,14 +77,6 @@ object ObsVariant
        CodeableConcept with CodeableConcept.codingNel[Coding],
        Required
      ]
-/* 
-  final case class GeneStudied(valueCodeableConcept: CodeableConceptStatic[HGNC])
-  extends Observation.ComponentElementSC
-     with Observation.Component.valueCodeableConcept[
-       CodeableConcept with CodeableConcept.codingNel[CodingStatic[HGNC]],
-       Required
-     ]
-*/ 
 
   final case class FunctionalAnnotation(valueCodeableConcept: CodeableConceptStatic[SequenceOntology])
   extends Observation.ComponentElementSC
@@ -162,15 +160,6 @@ object ObsVariant
   extends Observation.ComponentElementSC
      with Observation.Component.valueQuantity[Quantity,Required]
 
-/*
-  final case class ReportedAffectedGene(valueCodeableConcept: CodeableConceptStatic[HGNC])
-  extends Observation.ComponentElementSC
-     with Observation.Component.valueCodeableConcept[
-       CodeableConcept with CodeableConcept.codingNel[CodingStatic[HGNC]],
-       Required
-     ]
-*/
-
   final case class ReportedAffectedGene(valueCodeableConcept: CodeableConceptDynamic)
   extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
@@ -182,22 +171,12 @@ object ObsVariant
   extends Observation.ComponentElementSC
      with Observation.Component.valueString[Required]
 
-/*
-  final case class CNVType(valueCodeableConcept: CodeableConceptStatic[])
+  final case class CNVType(valueCodeableConcept: CodeableConceptStatic[CNV.Type.Value])
   extends Observation.ComponentElementSC
      with Observation.Component.valueCodeableConcept[
-       CodeableConcept with CodeableConcept.codingNel[CodingStatic[]],
+       CodeableConcept with CodeableConcept.codingNel[CodingStatic[CNV.Type.Value]],
        Required
      ]
-*/
-/*
-  final case class CopyNumberNeutralLoH(valueCodeableConcept: CodeableConceptStatic[HGNC])
-  extends Observation.ComponentElementSC
-     with Observation.Component.valueCodeableConcept[
-       CodeableConcept with CodeableConcept.codingNel[CodingStatic[HGNC]],
-       Required
-     ]
-*/
 
   final case class CopyNumberNeutralLoH(valueCodeableConcept: CodeableConceptDynamic)
   extends Observation.ComponentElementSC
@@ -297,6 +276,10 @@ object ObsVariant
       val reportedFocality: C[ReportedFocality]
     }
 
+    trait cnvType[C[_]]{       
+      val cnvType: C[CNVType]
+    }
+ 
     trait copyNumberNeutralLoH[C[_]]{
       val copyNumberNeutralLoH: C[List[CopyNumberNeutralLoH]]
     }
@@ -359,6 +342,9 @@ object ObsVariant
   implicit val codeCnB =
     Code[CnB,TBD_LOINC]("cnB","cnB")
 
+  implicit val codeCnvType =
+    Code[CNVType,TBD_LOINC]("cnv-type","Copy Number Variant Type")
+
   implicit val codeReportedAffectedGene =
     Code[ReportedAffectedGene,TBD_LOINC]("reported-affected-gene","Reported Affected Gene")
 
@@ -388,6 +374,7 @@ object ObsVariant
   implicit val formatRelativeCopyNumber     = Json.format[RelativeCopyNumber]
   implicit val formatCnA                    = Json.format[CnA]
   implicit val formatCnB                    = Json.format[CnB]
+  implicit val formatCnvType                = Json.format[CNVType]
   implicit val formatReportedAffectedGene   = Json.format[ReportedAffectedGene]
   implicit val formatReportedFocality       = Json.format[ReportedFocality]
   implicit val formatCopyNumberNeutralLoH   = Json.format[CopyNumberNeutralLoH]
@@ -402,7 +389,6 @@ extends ObsVariant
    with Observation.subject[Patient,Required]
 
 
-//TODO: add HGNC-ID?
 abstract class SimpleVariantProfile
 extends SomaticVariantProfile
    with Observation.components[
@@ -496,7 +482,7 @@ extends SomaticVariantProfile
        with ObsVariant.component.cnB[Optional]
        with ObsVariant.component.reportedAffectedGenes[Required]
        with ObsVariant.component.reportedFocality[Optional]
-//TODO: CNV.Type
+       with ObsVariant.component.cnvType[Required]
        with ObsVariant.component.copyNumberNeutralLoH[Required],
      Required
    ]
@@ -529,6 +515,7 @@ object CopyNumberVariant
     cnB: Option[CnB],
     reportedAffectedGenes: List[ReportedAffectedGene],
     reportedFocality: Option[ReportedFocality],
+    cnvType: CNVType,
     copyNumberNeutralLoH: List[CopyNumberNeutralLoH]
   ) 
   extends ObsVariant.component.chromosome[Required]
@@ -540,6 +527,7 @@ object CopyNumberVariant
      with ObsVariant.component.cnB[Optional]
      with ObsVariant.component.reportedAffectedGenes[Required]
      with ObsVariant.component.reportedFocality[Optional]
+     with ObsVariant.component.cnvType[Required]
      with ObsVariant.component.copyNumberNeutralLoH[Required]
 
 

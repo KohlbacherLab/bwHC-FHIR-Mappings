@@ -723,8 +723,10 @@ object Mappings
         DiagnosticReport.Status.Final,
         subject,
         NonEmptyList.one(LogicalReference[TumorSpecimen](histoReport.specimen)),
-        (tumorContent.map(Reference.contained(_)) ++
-           morphology.map(Reference.contained(_))).toList,
+        (
+         tumorContent.map(Reference.contained(_)) ++
+         morphology.map(Reference.contained(_))
+        ).toList,
         HistologyReport.Results(
           morphology,
           tumorContent
@@ -1045,6 +1047,15 @@ object Mappings
              .mapToF[CodeableConceptDynamic]
              .map(ReportedAffectedGene(_)),
           cnv.reportedFocality.map(ReportedFocality(_)),
+          CNVType(
+            CodeableConceptStatic(
+              CodingStatic[dtos.CNV.Type.Value](
+                cnv.`type`.toString,
+                None,
+                None
+              )
+            )
+          ),
           cnv.copyNumberNeutralLoH
              .getOrElse(List.empty)
              .mapToF[CodeableConceptDynamic]
@@ -1075,7 +1086,9 @@ object Mappings
         cnv.component.cnB.map(_.valueQuantity.value),
         Some(cnv.component.reportedAffectedGenes.map(_.valueCodeableConcept.mapTo[dtos.Gene.Coding])),
         cnv.component.reportedFocality.map(_.valueString),
-    dtos.CNV.Type.LowLevelGain, //TODO TODO
+        dtos.CNV.Type.withName(
+          cnv.component.cnvType.valueCodeableConcept.coding.head.code
+        ),
         Some(cnv.component.copyNumberNeutralLoH.map(_.valueCodeableConcept.mapTo[dtos.Gene.Coding]))
       )
   }
@@ -1169,9 +1182,9 @@ object Mappings
        TMB(report.contained.tmb.valueQuantity.value),
        Some(report.contained.simpleVariants.mapToF[dtos.SimpleVariant]),
        Some(report.contained.copyNumberVariants.mapToF[dtos.CNV]),
-       None,
-       None,
-       None
+  None,
+  None,
+  None
      )
 
   }
@@ -1276,8 +1289,6 @@ object Mappings
 
 
 
-
-
   implicit def counsellingReqIdFromIdentifier(id: Identifier) =
     dtos.GeneticCounsellingRequest.Id(id.value)
 
@@ -1286,6 +1297,7 @@ object Mappings
 
 
   implicit val counsellingReqToFHIR: dtos.GeneticCounsellingRequest => CounsellingRequest = {
+
     req =>
 
      CounsellingRequest(
@@ -1371,74 +1383,9 @@ object Mappings
     Identifier(id.value)
 
 
-/*
-  implicit val carePlanToFHIR: dtos.CarePlan => MTBCarePlan = {
-
-    cp => 
-      MTBCarePlan(        
-        NonEmptyList.one(cp.id.mapTo[Identifier]),
-        CarePlan.Status.Unknown,
-        CarePlan.Intent.Proposal,
-        cp.issuedOn,
-        LogicalReference[MTBPatient](cp.patient),
-        NonEmptyList.one(LogicalReference[Diagnosis](cp.diagnosis)),
-        cp.description,
-        (
-          cp.recommendations.getOrElse(List.empty)
-            .map(LogicalReference[TherapyRecommendation](_)) ++
-          cp.geneticCounsellingRequest
-            .map(LogicalReference[CounsellingRequest](_)) ++
-          cp.rebiopsyRequests.getOrElse(List.empty)
-            .map(LogicalReference[RebiopsyRequest](_))
-        )
-        .map(MTBCarePlan.Activity(_))
-      )
-
-  }
-
-  implicit def carePlanFromFHIR(
-    implicit
-    counsellingRequests: List[CounsellingRequest],
-    rebiopsyRequests: List[RebiopsyRequest]
-  ): MTBCarePlan => dtos.CarePlan = {
-
-    cp =>
-
- 
-      dtos.CarePlan(
-        dtos.CarePlan.Id(cp.identifier.head.value),
-        cp.subject.identifier,
-        cp.addresses.head.identifier,
-        cp.created,
-        cp.description,
-   None, //TODO TODO No Target Finding
-        Some(cp.activity.map(_.reference.identifier.mapTo[dtos.TherapyRecommendation.Id])),
-        cp.activity.map(_.reference)
-          .find(
-            ref =>
-              ref.`type` == Resource.Type[CounsellingRequest] &&
-              counsellingRequests.exists(_.identifier.head == ref.identifier)
-          )
-          .map(_.identifier),
-        Some(
-          cp.activity.map(_.reference)
-            .filter(
-              ref =>
-                ref.`type` == Resource.Type[RebiopsyRequest] &&
-                rebiopsyRequests.exists(_.identifier.head == ref.identifier)
-            )
-            .map(_.identifier)
-        ),
-   None //TODO TODO StudyInclusionRequest
-      )
-
-  }
-*/
-
   implicit def carePlanToFHIR(
     implicit studyInclusionReqs: List[dtos.StudyInclusionRequest]
   ): dtos.CarePlan => MTBCarePlan = {
-//  implicit val carePlanToFHIR: dtos.CarePlan => MTBCarePlan = {
 
     cp => 
 
@@ -1491,46 +1438,68 @@ object Mappings
     implicit
     counsellingRequests: List[CounsellingRequest],
     rebiopsyRequests: List[RebiopsyRequest]
-  ): MTBCarePlan => dtos.CarePlan = {
+  ): MTBCarePlan => (dtos.CarePlan,List[dtos.StudyInclusionRequest]) = {
 
     cp =>
- 
-      dtos.CarePlan(
-        dtos.CarePlan.Id(cp.identifier.head.value),
-        cp.subject.identifier,
-        cp.addresses.head.identifier,
-        cp.created,
-        cp.description,
-        cp.activity.noTarget.map(
-          nt =>
-            dtos.NoTargetFinding(
-              cp.subject.identifier,
-              cp.addresses.head.identifier,
-              cp.created,
-            )
-        ),
-        Some(
-          cp.activity.requests.map(_.reference.identifier.mapTo[dtos.TherapyRecommendation.Id])
-        ),
-        cp.activity.requests.map(_.reference)
-          .find(
-            ref =>
-              ref.`type` == Resource.Type[CounsellingRequest] &&
-              counsellingRequests.exists(_.identifier.head == ref.identifier)
-          )
-          .map(_.identifier),
-        Some(
-          cp.activity.requests.map(_.reference)
-            .filter(
-              ref =>
-                ref.`type` == Resource.Type[RebiopsyRequest] &&
-                rebiopsyRequests.exists(_.identifier.head == ref.identifier)
-            )
-            .map(_.identifier)
-        ),
-   None //TODO TODO StudyInclusionRequest
-      )
 
+      val studyInclusionRequests =
+        cp.activity
+          .studyInclusionRequests
+          .extension
+          .map(
+            ext => 
+              dtos.StudyInclusionRequest(
+                dtos.StudyInclusionRequest.Id(rndID.toString),
+                cp.subject.identifier,
+                cp.addresses.head.identifier,
+                dtos.NCTNumber(ext.value.identifier.value),
+                cp.created
+              )
+          )
+
+      val carePlan = 
+        dtos.CarePlan(
+          dtos.CarePlan.Id(cp.identifier.head.value),
+          cp.subject.identifier,
+          cp.addresses.head.identifier,
+          cp.created,
+          cp.description,
+          cp.activity.noTarget.map(
+            nt =>
+              dtos.NoTargetFinding(
+                cp.subject.identifier,
+                cp.addresses.head.identifier,
+                cp.created,
+              )
+          ),
+          Some(
+            cp.activity.requests
+              .map(
+                r => dtos.TherapyRecommendation.Id(r.reference.identifier.value)
+              )
+          ),
+          cp.activity.requests
+            .map(_.reference)
+            .find(
+              ref =>
+                ref.`type` == Resource.Type[CounsellingRequest] &&
+                counsellingRequests.exists(_.identifier.head == ref.identifier)
+            )
+            .map(_.identifier),
+          Some(
+            cp.activity.requests
+              .map(_.reference)
+              .filter(
+                ref =>
+                  ref.`type` == Resource.Type[RebiopsyRequest] &&
+                  rebiopsyRequests.exists(_.identifier.head == ref.identifier)
+              )
+              .map(_.identifier)
+          ),
+          Some(studyInclusionRequests.map(_.id))
+        )
+
+    (carePlan,studyInclusionRequests)
   }
 
   //---------------------------------------------------------------------------
@@ -1550,7 +1519,7 @@ object Mappings
         Claim.Status.Draft,
         LogicalReference[TherapyRecommendation](claim.therapy),
         LogicalReference[Patient](claim.patient),
-        LogicalReference[Organization](Identifier("TODO")),  //TODO
+        LogicalReference[Organization](Identifier("DUMMY")),  //TODO
       )
   }
 
@@ -1884,6 +1853,11 @@ object Mappings
       implicit val counsellingRequests = bundle.entry.geneticCounsellingRequests.map(_.resource)
       implicit val rebiopsyRequests    = bundle.entry.rebiopsyRequests.map(_.resource)
 
+      val (carePlans,studyInclusionRequests) =
+        bundle.entry.carePlans.mapToF[(dtos.CarePlan,List[dtos.StudyInclusionRequest])]
+          .unzip
+
+
       dtos.MTBFile(
         patient,
         bundle.entry.consent.mapTo[dtos.Consent],
@@ -1897,13 +1871,13 @@ object Mappings
         Some(bundle.entry.molecularPathology.mapToF[dtos.MolecularPathologyFinding]),
         Some(bundle.entry.histology.mapToF[dtos.HistologyReport]),
         Some(bundle.entry.ngsReports.mapToF[dtos.SomaticNGSReport]),
-        Some(bundle.entry.carePlans.mapToF[dtos.CarePlan]),
+        Some(carePlans),
         Some(bundle.entry.therapyRecommendations.mapToF[dtos.TherapyRecommendation]),
         Some(bundle.entry.geneticCounsellingRequests.mapToF[dtos.GeneticCounsellingRequest]),
         Some(bundle.entry.rebiopsyRequests.mapToF[dtos.RebiopsyRequest]),
 //        Some(bundle.entry.histologyReevaluationRequests.mapToF[dtos.HistologyReevaluationRequest]),
     None, //TODO
-    None, //TODO
+        Some(studyInclusionRequests.flatten),
         Some(bundle.entry.claims.mapToF[dtos.Claim]),
         Some(bundle.entry.claimResponses.mapToF[dtos.ClaimResponse]),
         Some(bundle.entry.molecularTherapies.mapToF[dtos.MolecularTherapyDocumentation]),
