@@ -72,7 +72,6 @@ object ObsTumorMorphology
 
 
 trait HistologyReportProfile
-//extends DiagnosticReport
 extends DiagnosticReportSC
    with DiagnosticReport.identifierNel
    with DiagnosticReport.subject[Patient,Required]

@@ -467,20 +467,27 @@ object Mappings
 
 
   implicit val medicationSetToFHIR: List[dtos.Medication.Coding] => MTBMedication = {
+
     meds =>
-      val id = meds.map(_.code.value).reduceLeftOption(_ + "-" + _).getOrElse(java.util.UUID.randomUUID.toString)
+
+      val id =
+        meds.map(_.code.value)
+          .reduceLeftOption(_ + "-" + _)
+          .getOrElse(java.util.UUID.randomUUID.toString)
+
       MTBMedication(
         id,
-        meds.map(m =>
-          MTBMedication.Ingredient(
-            CodeableConceptDynamic(
-              CodingDynamic(
-                m.code.value,
-                m.display,
-                m.system.mapTo[String],
-                None
+        meds.map(
+          m =>
+            MTBMedication.Ingredient(
+              CodeableConceptDynamic(
+                CodingDynamic(
+                  m.code.value,
+                  m.display,
+                  m.system.mapTo[String],
+                  m.version
+                )
               )
-            )
           )
         )
       )
@@ -495,7 +502,7 @@ object Mappings
             dtos.Medication.Code(c.code),
             c.system.mapTo[dtos.Medication.System.Value],
             c.display,
-            None
+            c.version
           )
         )
   }
@@ -559,7 +566,7 @@ object Mappings
         th.reasonStopped.map(r => List(CodeableConceptStatic(CodingStatic(r.code.toString,None,None)))),
         LogicalReference[MTBPatient](th.patient),
         NonEmptyList.one(LogicalReference[Condition](th.diagnosis)),
-        th.period.map(_.mapTo[OpenEndPeriod[LocalDate]]),
+        th.period.mapToF[OpenEndPeriod[LocalDate]],
         Reference.contained(medication)
       )
 
@@ -576,13 +583,14 @@ object Mappings
         th.identifier.head,
         th.subject.identifier,
         th.reasonReference.head.identifier,
-        th.extension.map { l => dtos.TherapyLine(l.head.value.value) },
-        th.period.map(_.mapTo[dtos.OpenEndPeriod[LocalDate]]),
+        th.extension.flatMap(_.headOption).map(l => dtos.TherapyLine(l.value.value)),
+        th.effectivePeriod.mapToF[dtos.OpenEndPeriod[LocalDate]],
         Some(th.contained.medication.mapTo[List[dtos.Medication.Coding]]),
         th.statusReason.flatMap(_.headOption)
           .map(cc =>
             dtos.Coding[StopReason.Value](
-              StopReason.withName(cc.coding.head.code), None
+              StopReason.withName(cc.coding.head.code),
+              None
             )
           )
       )
@@ -743,7 +751,8 @@ object Mappings
         obs.specimen.identifier,
         dtos.Coding(
           dtos.ICDO3M(obs.valueCodeableConcept.coding.head.code),
-          None
+          obs.valueCodeableConcept.coding.head.display,
+          obs.valueCodeableConcept.coding.head.version
         ),
         obs.note.flatMap(_.headOption).map(_.text)
       )
@@ -751,12 +760,12 @@ object Mappings
 
 
   implicit val histologyReportFromFHIR: HistologyReport => dtos.HistologyReport = {
-   report =>
-     dtos.HistologyReport(
+    report =>
+      dtos.HistologyReport(
         dtos.HistologyReport.Id(report.identifier.head.value),
         report.subject.identifier,
-        report.specimen.head.identifier,
-        report.issuedOn,
+        dtos.Specimen.Id(report.specimen.head.identifier.value),
+        report.issued,
         report.contained.tumorMorphology.mapToF[dtos.TumorMorphology],
         report.contained.tumorCellContent.mapToF[dtos.TumorCellContent],
      )
@@ -1025,7 +1034,7 @@ object Mappings
       
       CopyNumberVariant(
         cnv.id.value,
-        None,
+        None,  // No Identifiers on CNV
         Observation.Status.Final,
         subject,
         CopyNumberVariant.Components(
@@ -1277,11 +1286,11 @@ object Mappings
             )
           },
           rec.supportingInformation.flatMap(
-            _.find(_.`type` == Resource.Type[SomaticNGSReport])
+            _.find(_.`type` == Resource.Type[SomaticNGSReport].name)
              .map(ref => dtos.SomaticNGSReport.Id(ref.identifier.value))
           ),
           rec.supportingInformation.map(
-            _.filter(_.`type` == Resource.Type[SomaticVariantProfile])
+            _.filter(_.`type` == Resource.Type[SomaticVariantProfile].name)
              .map(ref => dtos.Variant.Id(ref.identifier.value))
           )
         )
@@ -1398,13 +1407,6 @@ object Mappings
         NonEmptyList.one(LogicalReference[Diagnosis](cp.diagnosis)),
         cp.description,
         MTBCarePlan.Activities(
-          cp.noTargetFinding.map(
-            nt =>
-            MTBCarePlan.NoTarget(
-              CarePlan.Activity.Detail.Status.Completed,
-              CodeableConceptDynamic(CodingDynamic("no-target",Some("No target"),"-",None))
-            )
-          ),
           (
             cp.recommendations.getOrElse(List.empty)
               .map(LogicalReference[TherapyRecommendation](_)) ++
@@ -1414,19 +1416,30 @@ object Mappings
               .map(LogicalReference[RebiopsyRequest](_))
           )
           .map(MTBCarePlan.RequestReference(_)),
-          MTBCarePlan.StudyInclusionRequests(
-            CarePlan.Activity.Detail.Status.Scheduled,
-            CodeableConceptDynamic(CodingDynamic("study-inclusion-requests",Some("Study Inclusion Requests"),"-",None)),
-            studyInclusionReqs.map(
-              req =>
-                MTBCarePlan.NCTStudyReference(
-                  LogicalReference[ResearchStudy](
-                    Identifier(
-                      req.nctNumber.value,
-                      Some(java.net.URI.create("https://clinicaltrials.gov/"))
+          cp.noTargetFinding.map(
+            nt =>
+            MTBCarePlan.Activity(
+              MTBCarePlan.NoTarget(
+                CarePlan.Activity.Detail.Status.Completed,
+                CodeableConceptDynamic(CodingDynamic("no-target",Some("No target"),"-",None))
+              )
+            )
+          ),
+          MTBCarePlan.Activity(
+            MTBCarePlan.StudyInclusionRequests(
+              CarePlan.Activity.Detail.Status.Scheduled,
+              CodeableConceptDynamic(CodingDynamic("study-inclusion-requests",Some("Study Inclusion Requests"),"-",None)),
+              studyInclusionReqs.map(
+                req =>
+                  MTBCarePlan.NCTStudyReference(
+                    LogicalReference[ResearchStudy](
+                      Identifier(
+                        req.nctNumber.value,
+                        Some(java.net.URI.create("https://clinicaltrials.gov/"))
+                      )
                     )
                   )
-                )
+               )
             )
           )
         )
@@ -1445,6 +1458,7 @@ object Mappings
       val studyInclusionRequests =
         cp.activity
           .studyInclusionRequests
+          .detail
           .extension
           .map(
             ext => 
@@ -1474,15 +1488,18 @@ object Mappings
           ),
           Some(
             cp.activity.requests
-              .map(
-                r => dtos.TherapyRecommendation.Id(r.reference.identifier.value)
+              .map(_.reference)
+              .filter(
+                ref =>
+                  ref.`type` == Resource.Type[TherapyRecommendation].name
               )
+              .map(_.identifier),
           ),
           cp.activity.requests
             .map(_.reference)
             .find(
               ref =>
-                ref.`type` == Resource.Type[CounsellingRequest] &&
+                ref.`type` == Resource.Type[CounsellingRequest].name &&
                 counsellingRequests.exists(_.identifier.head == ref.identifier)
             )
             .map(_.identifier),
@@ -1491,7 +1508,7 @@ object Mappings
               .map(_.reference)
               .filter(
                 ref =>
-                  ref.`type` == Resource.Type[RebiopsyRequest] &&
+                  ref.`type` == Resource.Type[RebiopsyRequest].name &&
                   rebiopsyRequests.exists(_.identifier.head == ref.identifier)
               )
               .map(_.identifier)
@@ -1785,7 +1802,7 @@ object Mappings
         resp.identifier.head,
         resp.subject.identifier,
         resp.partOf.head.identifier,
-        resp.effectiveDate,
+        resp.effectiveDateTime,
         dtos.Coding(
           dtos.RECIST.withName(resp.valueCodeableConcept.coding.head.code),
           None

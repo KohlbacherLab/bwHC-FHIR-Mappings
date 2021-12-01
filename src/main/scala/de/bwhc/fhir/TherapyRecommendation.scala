@@ -11,7 +11,7 @@ import org.hl7.fhir.r4.CarePlan._
 import org.hl7.fhir.r4.MedicationRequest._
 import org.hl7.fhir.r4.ServiceRequest._
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, Format}
 
 import de.bwhc.mtb.data.entry.dtos.LevelOfEvidence
 
@@ -263,9 +263,12 @@ extends CarePlan
      CarePlan.ActivitySet {
        val noTarget:
          Option[
-           CarePlan.Activity.DetailElement
-             with CarePlan.Activity.Detail.statusReason[
-               CodeableConceptDynamic, Required
+           CarePlan.ActivityElement
+             with CarePlan.Activity.detail[
+               CarePlan.Activity.DetailElement
+                 with CarePlan.Activity.Detail.statusReason[
+                   CodeableConceptDynamic, Required
+                 ]
              ]
          ]
 
@@ -276,19 +279,19 @@ extends CarePlan
          ]
   
        val studyInclusionRequests: 
-         CarePlan.Activity.DetailElement
-           with CarePlan.Activity.Detail.code[CodeableConceptDynamic,Required]
-           with CarePlan.Activity.Detail.extension[
-             SimpleExtension[Reference[ResearchStudy]],
-             Required
-           ]
+         CarePlan.ActivityElement
+           with CarePlan.Activity.detail[
+             CarePlan.Activity.DetailElement
+               with CarePlan.Activity.Detail.code[CodeableConceptDynamic,Required]
+               with CarePlan.Activity.Detail.extension[
+                 SimpleExtension[Reference[ResearchStudy]],
+                 Required
+               ]
+             ]
      },
      Required
    ]
-//   with CarePlan.activity[
-//     CarePlan.ActivityElement with CarePlan.Activity.reference[DomainResource with Request],
-//     Required
-//   ]
+
 
 final case class MTBCarePlan
 (
@@ -300,7 +303,6 @@ final case class MTBCarePlan
   addresses: NonEmptyList[LogicalReference[Diagnosis]],
   description: Option[String],
   activity: MTBCarePlan.Activities 
-//  activity: List[MTBCarePlan.Activity] 
 )
 extends MTBCarePlanProfile
 
@@ -323,6 +325,27 @@ object MTBCarePlan
   implicit val formatActivity = Json.format[Activities]
 */
 
+  final case class RequestReference
+  (
+    reference: LogicalReference[DomainResource with Request]
+  )
+  extends CarePlan.ActivityElement
+     with CarePlan.Activity.reference[DomainResource with Request]
+  
+  implicit val formatRequestReference = Json.format[RequestReference]
+
+
+  final case class Activity[D <: CarePlan.Activity.DetailElement]
+  (
+    detail: D
+  ) 
+  extends CarePlan.ActivityElement
+     with CarePlan.Activity.detail[D]
+
+  implicit def formatActivity[D <: CarePlan.Activity.DetailElement: Format] =
+    Json.format[Activity[D]]
+
+
   final case class NoTarget
   (
     status: CarePlan.Activity.Detail.Status.Value,
@@ -330,35 +353,25 @@ object MTBCarePlan
   )
   extends CarePlan.Activity.DetailElement
      with CarePlan.Activity.Detail.statusReason[CodeableConceptDynamic,Required]
-
+  
   implicit val formatNoTarget = Json.format[NoTarget]
-
-  final case class RequestReference
-  (
-    reference: LogicalReference[DomainResource with Request]
-  )
-  extends CarePlan.ActivityElement
-     with CarePlan.Activity.reference[DomainResource with Request]
-
-  implicit val formatRequestReference = Json.format[RequestReference]
-
-
+    
+    
   final case class NCTStudyReference
   (
     value: LogicalReference[ResearchStudy]
   )
   extends SimpleExtension[LogicalReference[ResearchStudy]]
-
+  
   object NCTStudyReference
-  {
-
+  {  
     import json.extensions._
-
+  
     implicit val url    = Extension.Url[NCTStudyReference]("http://bwhc.de/mtb/study-inclusion-request/nct-number")
     implicit val format = json.extensions.format(NCTStudyReference(_))
   }
-
-
+  
+  
   final case class StudyInclusionRequests
   (
     status: CarePlan.Activity.Detail.Status.Value,
@@ -368,15 +381,15 @@ object MTBCarePlan
   extends CarePlan.Activity.DetailElement
      with CarePlan.Activity.Detail.code[CodeableConceptDynamic,Required]
      with CarePlan.Activity.Detail.extension[SimpleExtension[Reference[ResearchStudy]],Required]
-
+  
   implicit val formatStudyInclusionRequests = Json.format[StudyInclusionRequests]
-
+    
 
   final case class Activities
   (
-    noTarget: Option[NoTarget],
     requests: List[RequestReference],
-    studyInclusionRequests: StudyInclusionRequests
+    noTarget: Option[Activity[NoTarget]],
+    studyInclusionRequests: Activity[StudyInclusionRequests]
   ) extends CarePlan.ActivitySet
 
 
