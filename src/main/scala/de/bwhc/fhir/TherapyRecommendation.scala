@@ -279,15 +279,20 @@ extends CarePlan
          ]
   
        val studyInclusionRequests: 
-         CarePlan.ActivityElement
-           with CarePlan.Activity.detail[
-             CarePlan.Activity.DetailElement
-               with CarePlan.Activity.Detail.code[CodeableConceptDynamic,Required]
-               with CarePlan.Activity.Detail.extension[
-                 SimpleExtension[Reference[ResearchStudy]],
-                 Required
-               ]
+         List[
+           CarePlan.ActivityElement
+             with CarePlan.Activity.detail[
+               CarePlan.Activity.DetailElement
+                 with CarePlan.Activity.Detail.code[
+                   CodeableConceptDynamic,
+                   Required
+                 ]
+                 with CarePlan.Activity.Detail.extensionNel[
+                   SimpleExtension[Reference[ResearchStudy]]
+                 ]
+                 with CarePlan.Activity.Detail.reasonReferenceNel
              ]
+         ]
      },
      Required
    ]
@@ -313,17 +318,6 @@ object MTBCarePlan
   implicit val profiles =
     Meta.Profiles[MTBCarePlan]("http://bwhc.de/mtb/careplan")
 
-/*  
-  case class Activity
-  (
-    reference: LogicalReference[DomainResource with Request]
-  )
-  extends CarePlan.ActivityElement
-     with CarePlan.Activity.reference[DomainResource with Request]
-
-
-  implicit val formatActivity = Json.format[Activities]
-*/
 
   final case class RequestReference
   (
@@ -367,29 +361,37 @@ object MTBCarePlan
   {  
     import json.extensions._
   
-    implicit val url    = Extension.Url[NCTStudyReference]("http://bwhc.de/mtb/study-inclusion-request/nct-number")
-    implicit val format = json.extensions.format(NCTStudyReference(_))
+    implicit val url =
+      Extension.Url[NCTStudyReference]("http://bwhc.de/mtb/study-inclusion-request/nct-number")
+
+    implicit val format =
+      json.extensions.format(NCTStudyReference(_))
   }
   
   
-  final case class StudyInclusionRequests
+  final case class StudyInclusionRequest
   (
     status: CarePlan.Activity.Detail.Status.Value,
     code: CodeableConceptDynamic,
-    extension: List[NCTStudyReference]
+    extension: NonEmptyList[NCTStudyReference],
+    reasonReference: NonEmptyList[LogicalReference[Condition]]
   )
   extends CarePlan.Activity.DetailElement
      with CarePlan.Activity.Detail.code[CodeableConceptDynamic,Required]
-     with CarePlan.Activity.Detail.extension[SimpleExtension[Reference[ResearchStudy]],Required]
-  
-  implicit val formatStudyInclusionRequests = Json.format[StudyInclusionRequests]
+     with CarePlan.Activity.Detail.extensionNel[SimpleExtension[Reference[ResearchStudy]]]
+     with CarePlan.Activity.Detail.reasonReferenceNel
+
+  import org.hl7.fhir.r4.json.formatNel
+
+  implicit val formatStudyInclusionRequest = Json.format[StudyInclusionRequest]
+
     
 
   final case class Activities
   (
     requests: List[RequestReference],
     noTarget: Option[Activity[NoTarget]],
-    studyInclusionRequests: Activity[StudyInclusionRequests]
+    studyInclusionRequests: List[Activity[StudyInclusionRequest]]
   ) extends CarePlan.ActivitySet
 
 

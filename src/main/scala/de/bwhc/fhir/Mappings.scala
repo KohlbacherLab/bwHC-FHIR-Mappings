@@ -1425,12 +1425,14 @@ object Mappings
               )
             )
           ),
-          MTBCarePlan.Activity(
-            MTBCarePlan.StudyInclusionRequests(
-              CarePlan.Activity.Detail.Status.Scheduled,
-              CodeableConceptDynamic(CodingDynamic("study-inclusion-requests",Some("Study Inclusion Requests"),"-",None)),
-              studyInclusionReqs.map(
-                req =>
+          studyInclusionReqs.map( req =>
+            MTBCarePlan.Activity(
+              MTBCarePlan.StudyInclusionRequest(
+                CarePlan.Activity.Detail.Status.Scheduled,
+                CodeableConceptDynamic(
+                  CodingDynamic("study-inclusion-request",Some("Study Inclusion Request"),"-",None)
+                ),
+                NonEmptyList.one(
                   MTBCarePlan.NCTStudyReference(
                     LogicalReference[ResearchStudy](
                       Identifier(
@@ -1439,7 +1441,11 @@ object Mappings
                       )
                     )
                   )
-               )
+                ),
+                NonEmptyList.one(
+                  LogicalReference[Condition](Identifier(req.reason.value))
+                )
+              )
             )
           )
         )
@@ -1454,19 +1460,16 @@ object Mappings
   ): MTBCarePlan => (dtos.CarePlan,List[dtos.StudyInclusionRequest]) = {
 
     cp =>
-
       val studyInclusionRequests =
         cp.activity
           .studyInclusionRequests
-          .detail
-          .extension
           .map(
-            ext => 
+            act =>
               dtos.StudyInclusionRequest(
                 dtos.StudyInclusionRequest.Id(rndID.toString),
                 cp.subject.identifier,
-                cp.addresses.head.identifier,
-                dtos.NCTNumber(ext.value.identifier.value),
+                act.detail.reasonReference.head.identifier,
+                dtos.NCTNumber(act.detail.extension.head.value.identifier.value),
                 cp.created
               )
           )
@@ -1517,7 +1520,9 @@ object Mappings
         )
 
     (carePlan,studyInclusionRequests)
+
   }
+
 
   //---------------------------------------------------------------------------
   // Claim / ClaimResponse mappings
