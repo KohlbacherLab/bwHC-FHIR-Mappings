@@ -252,11 +252,12 @@ extends DiagnosticReportSC
      },
      Required
    ]
-   with DiagnosticReport.resultNel[Observation]
+//   with DiagnosticReport.resultNel[Observation]
+   with DiagnosticReport.result[Observation,Required]
    with DiagnosticReport.contained[
      ContainedResources {
        val tumorCellContent:   Option[ObsTumorCellContentProfile]
-       val tmb:                ObsTMBProfile
+       val tmb:                Option[ObsTMBProfile]
        val msi:                Option[ObsMSIProfile]
        val brcaness:           Option[ObsBRCAnessProfile]
        val simpleVariants:     List[SimpleVariantProfile]
@@ -273,7 +274,8 @@ final case class SomaticNGSReport
   extension: SomaticNGSReport.Extensions,
   subject: LogicalReference[MTBPatient],
   specimen: NonEmptyList[LogicalReference[TumorSpecimen]],
-  result: NonEmptyList[LiteralReference[Observation]],
+//  result: NonEmptyList[LiteralReference[Observation]],
+  result: List[LiteralReference[Observation]],
   contained: SomaticNGSReport.Results
 )
 extends SomaticNGSReportProfile
@@ -307,7 +309,7 @@ object SomaticNGSReport
   final case class Results
   (
     tumorCellContent:   Option[ObsTumorCellContent],
-    tmb:                ObsTMB,
+    tmb:                Option[ObsTMB],
     msi:                Option[ObsMSI],
     brcaness:           Option[ObsBRCAness],
     simpleVariants:     List[SimpleVariant],

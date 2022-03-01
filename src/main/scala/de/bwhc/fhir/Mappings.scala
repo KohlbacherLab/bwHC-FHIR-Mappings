@@ -1045,10 +1045,14 @@ object Mappings
           EndRange(
             LBoundedRange(cnv.endRange.start.toDouble,cnv.endRange.end.map(_.toDouble))
           ),
-          CopyNumber(cnv.totalCopyNumber),
-          RelativeCopyNumber(
-            SimpleQuantity(cnv.relativeCopyNumber)
+          cnv.totalCopyNumber.map(CopyNumber(_)),
+          cnv.relativeCopyNumber.map(
+            rcn => RelativeCopyNumber(SimpleQuantity(rcn))
           ),
+//          CopyNumber(cnv.totalCopyNumber),
+//          RelativeCopyNumber(
+//            SimpleQuantity(cnv.relativeCopyNumber)
+//          ),
           cnv.cnA.map(SimpleQuantity(_)).map(CnA(_)),
           cnv.cnB.map(SimpleQuantity(_)).map(CnB(_)),
           cnv.reportedAffectedGenes
@@ -1089,8 +1093,8 @@ object Mappings
           cnv.component.endRange.valueRange.low.value.toLong,
           cnv.component.endRange.valueRange.high.map(_.value.toLong),
         ),
-        cnv.component.copyNumber.valueInteger,
-        cnv.component.relativeCopyNumber.valueQuantity.value,
+        cnv.component.copyNumber.map(_.valueInteger),
+        cnv.component.relativeCopyNumber.map(_.valueQuantity.value),
         cnv.component.cnA.map(_.valueQuantity.value),
         cnv.component.cnB.map(_.valueQuantity.value),
         Some(cnv.component.reportedAffectedGenes.map(_.valueCodeableConcept.mapTo[dtos.Gene.Coding])),
@@ -1113,7 +1117,7 @@ object Mappings
       implicit val specimen = LogicalReference[TumorSpecimen](ngsReport.specimen)
 
       val tcc      = ngsReport.tumorCellContent.mapToF[ObsTumorCellContent]
-      val tmb      = ngsReport.tmb.mapTo[ObsTMB]
+      val tmb      = ngsReport.tmb.mapToF[ObsTMB]
       val msi      = ngsReport.msi.mapToF[ObsMSI]
       val brcaness = ngsReport.brcaness.mapToF[ObsBRCAness]
       val snvs     = ngsReport.simpleVariants.getOrElse(List.empty).mapToF[SimpleVariant]
@@ -1138,9 +1142,7 @@ object Mappings
         ),
         subject,
         NonEmptyList.one(specimen),
-        NonEmptyList.of(
-          Reference.contained(tmb),
-        ) ++
+        tmb.map(Reference.contained(_)).toList ++
           tcc.map(Reference.contained(_)).toList ++
           msi.map(Reference.contained(_)).toList ++
           brcaness.map(Reference.contained(_)).toList ++
@@ -1188,7 +1190,9 @@ object Mappings
        report.contained.msi.map(
          obs => MSI(obs.valueQuantity.value)
        ),
-       TMB(report.contained.tmb.valueQuantity.value),
+       report.contained.tmb.map(
+         obs => TMB(obs.valueQuantity.value)
+       ),
        Some(report.contained.simpleVariants.mapToF[dtos.SimpleVariant]),
        Some(report.contained.copyNumberVariants.mapToF[dtos.CNV]),
   None,

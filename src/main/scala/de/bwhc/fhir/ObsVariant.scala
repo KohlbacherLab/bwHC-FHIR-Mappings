@@ -476,8 +476,8 @@ extends SomaticVariantProfile
        with ObsVariant.component.chromosome[Required]
        with ObsVariant.component.startRange[Required]
        with ObsVariant.component.endRange[Required]
-       with ObsVariant.component.copyNumber[Required]
-       with ObsVariant.component.relativeCopyNumber[Required]
+       with ObsVariant.component.copyNumber[Optional]
+       with ObsVariant.component.relativeCopyNumber[Optional]
        with ObsVariant.component.cnA[Optional]
        with ObsVariant.component.cnB[Optional]
        with ObsVariant.component.reportedAffectedGenes[Required]
@@ -509,8 +509,8 @@ object CopyNumberVariant
     chromosome: Chromosome,
     startRange: StartRange,
     endRange: EndRange,
-    copyNumber: CopyNumber,
-    relativeCopyNumber: RelativeCopyNumber,
+    copyNumber: Option[CopyNumber],
+    relativeCopyNumber: Option[RelativeCopyNumber],
     cnA: Option[CnA],
     cnB: Option[CnB],
     reportedAffectedGenes: List[ReportedAffectedGene],
@@ -521,8 +521,8 @@ object CopyNumberVariant
   extends ObsVariant.component.chromosome[Required]
      with ObsVariant.component.startRange[Required]
      with ObsVariant.component.endRange[Required]
-     with ObsVariant.component.copyNumber[Required]
-     with ObsVariant.component.relativeCopyNumber[Required]
+     with ObsVariant.component.copyNumber[Optional]
+     with ObsVariant.component.relativeCopyNumber[Optional]
      with ObsVariant.component.cnA[Optional]
      with ObsVariant.component.cnB[Optional]
      with ObsVariant.component.reportedAffectedGenes[Required]
