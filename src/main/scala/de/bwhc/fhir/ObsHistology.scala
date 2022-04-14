@@ -69,7 +69,7 @@ object ObsHistology
 {
 
   implicit val profile =
-    Meta.Profiles[ObsHistology]("http://de.bwhc/histology")
+    Meta.Profiles[ObsHistology]("http://bwhc.de/histology")
     
 
   import ObsHistologyProfile._

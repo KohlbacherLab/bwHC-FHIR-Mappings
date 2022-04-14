@@ -44,7 +44,7 @@ extends ObsECOGProfile
 object ObsECOG
 {
 
-  implicit val profiles = Meta.Profiles[ObsECOG]("http://de.bwhc/obs-ecog-performance-status")
+  implicit val profiles = Meta.Profiles[ObsECOG]("http://bwhc.de/obs-ecog-performance-status")
     
     
   implicit val code = Code[ObsECOG](LOINC("89247-1"))
