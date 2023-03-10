@@ -2,9 +2,9 @@
 
 
 name := "fhir-mappings"
-organization in ThisBuild := "de.bwhc"
-scalaVersion in ThisBuild := "2.13.8"
-version in ThisBuild := "1.0-SNAPSHOT"
+ThisBuild / organization := "de.bwhc"
+ThisBuild / scalaVersion := "2.13.8"
+ThisBuild / version      := "1.1-SNAPSHOT"
 
 
 //-----------------------------------------------------------------------------
@@ -16,8 +16,10 @@ lazy val root = project.in(file("."))
   .settings(
     libraryDependencies ++= Seq(
       "de.ekut.tbi"       %% "fhir-proof"                        % "0.1-SNAPSHOT",
-      "de.bwhc"           %% "data-entry-service-api"            % "1.0-SNAPSHOT",
-      "de.bwhc"           %% "mtb-dto-generators"                % "1.0-SNAPSHOT" % Test,
+      "de.bwhc"           %% "data-entry-service-api"            % "1.1-SNAPSHOT",
+      "de.bwhc"           %% "mtb-dto-generators"                % "1.1-SNAPSHOT" % Test,
+//      "de.bwhc"           %% "data-entry-service-api"            % "1.0-SNAPSHOT",
+//      "de.bwhc"           %% "mtb-dto-generators"                % "1.0-SNAPSHOT" % Test,
       "ca.uhn.hapi.fhir"  %  "hapi-fhir-base"                    % "5.2.1" % Test,
       "ca.uhn.hapi.fhir"  %  "hapi-fhir-structures-r4"           % "5.2.1" % Test,
       "ca.uhn.hapi.fhir"  %  "hapi-fhir-validation-resources-r4" % "5.2.1" % Test,
@@ -46,10 +48,8 @@ lazy val compilerOptions = Seq(
 
 lazy val commonSettings = Seq(
   scalacOptions ++= compilerOptions,
-  resolvers ++= Seq(
-    "Local Maven Repository" at "file://" + Path.userHome.absolutePath + "/.m2/repository",
-    Resolver.sonatypeRepo("releases"),
-    Resolver.sonatypeRepo("snapshots")
-  )
+  resolvers ++=
+    Seq("Local Maven Repository" at "file://" + Path.userHome.absolutePath + "/.m2/repository") ++
+    Resolver.sonatypeOssRepos("releases") ++
+    Resolver.sonatypeOssRepos("snapshots")
 )
-

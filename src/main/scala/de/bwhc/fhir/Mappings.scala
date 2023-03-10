@@ -60,9 +60,24 @@ object Mappings
   implicit def openEndPeriodToFHIR[T <: Temporal]: dtos.OpenEndPeriod[T] => OpenEndPeriod[T] =
     p => OpenEndPeriod(p.start,p.end)
 
-
   implicit def openEndPeriodFromFHIR[T <: Temporal]: OpenEndPeriod[T] => dtos.OpenEndPeriod[T] =
     p => dtos.OpenEndPeriod(p.start,p.end)
+
+  implicit def periodToFHIR[T <: Temporal]: dtos.Period[T] => Period[T] = {
+    case p: dtos.OpenEndPeriod[T] => OpenEndPeriod(p.start,p.end)
+    case p: dtos.ClosedPeriod[T]  => ClosedPeriod(p.start,p.end)
+  }
+
+  implicit def closedPeriodToFHIR[T <: Temporal]: dtos.ClosedPeriod[T] => ClosedPeriod[T] =
+    p => ClosedPeriod(p.start,p.end)
+
+  implicit def closedPeriodFromFHIR[T <: Temporal]: ClosedPeriod[T] => dtos.ClosedPeriod[T] =
+    p => dtos.ClosedPeriod(p.start,p.end)
+
+  implicit def periodFromFHIR[T <: Temporal]: Period[T] => dtos.Period[T] = {
+    case p: OpenEndPeriod[T] => dtos.OpenEndPeriod(p.start,p.end)
+    case p: ClosedPeriod[T]  => dtos.ClosedPeriod(p.start,p.end)
+  }
 
 
 
@@ -415,6 +430,17 @@ object Mappings
   implicit def ecogIdToIdentifier(id: dtos.ECOGStatus.Id) =
     Identifier(id.value)
 
+/*
+  implicit val ecogToLOINCCode =
+    Map[dtos.ECOG.Value,String](
+      dtos.ECOG.Zero  -> "LA9622-7",
+      dtos.ECOG.One   -> "LA9623-5",
+      dtos.ECOG.Two   -> "LA9624-3",
+      dtos.ECOG.Three -> "LA9625-0",
+      dtos.ECOG.Four  -> "LA9626-8",
+//      dtos.ECOG.Five -> "LA9627-6"
+   )
+*/
 
   implicit val ecogStatusToFHIR: dtos.ECOGStatus => ObsECOG = {
     ecog =>
@@ -429,6 +455,7 @@ object Mappings
         CodeableConceptStatic(
           CodingStatic[dtos.ECOG.Value](
             ecog.value.code.toString,
+//            ecog.value.code.mapTo[String],
             dtos.ValueSet[dtos.ECOG.Value].displayOf(ecog.value.code),
             None
           )
@@ -1611,6 +1638,78 @@ object Mappings
   }
 
 
+  implicit val molTherapyStatusToFHIR =
+    Map[dtos.MolecularTherapy.Status.Value, MedicationStatement.Status.Value](
+      dtos.MolecularTherapy.Status.NotDone   -> MedicationStatement.Status.NotTaken,
+      dtos.MolecularTherapy.Status.Ongoing   -> MedicationStatement.Status.Active,
+      dtos.MolecularTherapy.Status.Stopped   -> MedicationStatement.Status.Stopped,
+      dtos.MolecularTherapy.Status.Completed -> MedicationStatement.Status.Completed
+    )
+
+  implicit val molTherapyStatusFromFHIR = molTherapyStatusToFHIR.invert
+
+
+  implicit val molecularTherapyToFHIR: dtos.MolecularTherapy => MolecularTherapy = {
+
+    import MolecularTherapy.Systems._
+
+    molTh =>
+
+      val identifier = NonEmptyList.one(molTh.id.mapTo[Identifier])
+      val subject    = LogicalReference[MTBPatient](molTh.patient)
+      val basedOn    = NonEmptyList.one(LogicalReference[TherapyRecommendation](molTh.basedOn))
+      val note       = molTh.note.map(Note(_)).map(List(_))
+
+      val medication = molTh.medication.getOrElse(List.empty).mapTo[MTBMedication]
+
+      MolecularTherapy(
+        identifier,
+        ContainedMedication(medication),
+        basedOn,
+        molTh.status.mapTo[MedicationStatement.Status.Value],
+        molTh.recordedOn,
+        subject,
+        Reference.contained(medication),
+/*        
+        molTh.period.map {
+          case op: dtos.OpenEndPeriod[LocalDate] => op.mapTo[OpenEndPeriod[LocalDate]]
+          case cl: dtos.ClosedPeriod[LocalDate]  => cl.mapTo[ClosedPeriod[LocalDate]]
+        },
+*/        
+        molTh.period.map(_.mapTo[Period[LocalDate]]),
+        molTh.dosage.map(_.mapTo[DosageDensity]).map(List(_)),
+        Option(
+          molTh.notDoneReason.map(
+            coding =>
+              CodingDynamic(
+                coding.code.toString,
+                coding.display,
+                CodingSystem[dtos.MolecularTherapy.NotDoneReason.Value].uri.toString,
+                None
+              )
+            )
+            .toList ++
+            molTh.reasonStopped.map(
+              coding =>
+                CodingDynamic(
+                  coding.code.toString,
+                  coding.display,
+                  CodingSystem[dtos.MolecularTherapy.StopReason.Value].uri.toString,
+                  None
+                )
+              
+            )
+        )
+        .filterNot(_.isEmpty)
+        .map(NonEmptyList.fromListUnsafe)
+        .map(CodeableConceptDynamic(_,None))
+        .map(List(_)),
+        note
+      )
+
+  }
+
+/*
   implicit val molecularTherapyToFHIR: dtos.MolecularTherapy => MolecularTherapy = {
 
     import MolecularTherapy.Systems._
@@ -1694,6 +1793,7 @@ object Mappings
 
       }
   }
+*/
 
   implicit val molTherapyDocToFHIR:
     dtos.MolecularTherapyDocumentation => MolecularTherapyHistory = {
@@ -1707,6 +1807,59 @@ object Mappings
     }
 
 
+  implicit val molecularTherapyFromFHIR: MolecularTherapy => dtos.MolecularTherapy = {
+
+    import dtos.MolecularTherapy._
+    import MolecularTherapy.Systems._
+
+    molTh =>
+
+      val id      = dtos.TherapyId(molTh.identifier.head.value)
+      val note    = molTh.note.flatMap(_.headOption).map(_.text)
+
+      dtos.MolecularTherapy(
+        id,
+        molTh.subject.identifier, 
+        molTh.dateAsserted,
+        molTh.status.mapTo[dtos.MolecularTherapy.Status.Value],
+        molTh.basedOn.head.identifier,
+        molTh.period.map(_.mapTo[dtos.Period[LocalDate]]),
+/*        
+        molTh.period.map {
+          case op: OpenEndPeriod[LocalDate] => op.mapTo[dtos.OpenEndPeriod[LocalDate]]
+          case cl: ClosedPeriod[LocalDate]  => cl.mapTo[dtos.ClosedPeriod[LocalDate]]
+        },
+*/
+        Some(molTh.contained.medication.mapTo[List[dtos.Medication.Coding]]),
+        molTh.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
+        molTh.statusReason
+          .flatMap(_.headOption)
+          .flatMap(
+            cc =>
+              cc.coding
+                .find(_.system == CodingSystem[NotDoneReason.Value].uri.toString)
+                .map(
+                  coding =>
+                    dtos.Coding(NotDoneReason.withName(coding.code),None),
+                )
+          ),
+        molTh.statusReason
+          .flatMap(_.headOption)
+          .flatMap(
+            cc =>
+              cc.coding
+                .find(_.system == CodingSystem[StopReason.Value].uri.toString)
+                .map(
+                  coding =>
+                    dtos.Coding(StopReason.withName(coding.code),None),
+                )
+          ),
+        note
+      )
+      
+  }
+
+/*
   implicit val molecularTherapyFromFHIR: MolecularTherapy => dtos.MolecularTherapy = {
 
     import dtos.MolecularTherapy._
@@ -1771,7 +1924,7 @@ object Mappings
 
       }
   }
-
+*/
 
   implicit val molTherapyDocFromFHIR:
     MolecularTherapyHistory => dtos.MolecularTherapyDocumentation = {

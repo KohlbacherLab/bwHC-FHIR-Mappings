@@ -44,10 +44,12 @@ extends ObsECOGProfile
 object ObsECOG
 {
 
-  implicit val profiles = Meta.Profiles[ObsECOG]("http://bwhc.de/obs-ecog-performance-status")
+  implicit val profiles =
+    Meta.Profiles[ObsECOG]("http://bwhc.de/obs-ecog-performance-status")
     
     
-  implicit val code = Code[ObsECOG](LOINC("89247-1"))
+  implicit val code =
+    Code[ObsECOG](LOINC("89247-1",Some("ECOG Performance Status score")))
 
   implicit val formatObsECOG = Json.format[ObsECOG]
   
