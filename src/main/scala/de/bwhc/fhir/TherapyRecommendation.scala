@@ -13,7 +13,7 @@ import org.hl7.fhir.r4.ServiceRequest._
 
 import play.api.libs.json.{Json, Format}
 
-import de.bwhc.mtb.data.entry.dtos.LevelOfEvidence
+import de.bwhc.mtb.dtos.LevelOfEvidence
 
 
 

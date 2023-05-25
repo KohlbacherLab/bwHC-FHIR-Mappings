@@ -8,7 +8,7 @@ import java.util.UUID.{randomUUID => rndID}
 
 import cats.data.NonEmptyList
 
-import de.bwhc.mtb.data.entry.dtos
+import de.bwhc.mtb.dtos
 
 import org.hl7.fhir.r4._
 import org.hl7.fhir.r4.Bundle.EntryOf
@@ -445,7 +445,7 @@ object Mappings
   implicit val ecogStatusToFHIR: dtos.ECOGStatus => ObsECOG = {
     ecog =>
 
-      import de.bwhc.mtb.data.entry.dtos.ValueSets._
+      import de.bwhc.mtb.dtos.ValueSets._
 
       ObsECOG(
         NonEmptyList.one(ecog.id),
@@ -482,7 +482,7 @@ object Mappings
   // Medication mappings
   //---------------------------------------------------------------------------
 
-  import de.bwhc.mtb.data.entry.dtos.{Medication => ATC}
+  import de.bwhc.mtb.dtos.{Medication => ATC}
 
   implicit val medicationSystemToFHIR =
     Map[dtos.Medication.System.Value,String](
@@ -1013,6 +1013,7 @@ object Mappings
 
       dtos.SimpleVariant(
         Id(snv.id),
+        None,
         dtos.Chromosome(snv.component.chromosome.valueString),
         snv.component.geneStudied.headOption.map(_.valueCodeableConcept).mapToF[dtos.Gene.Coding],
         StartEnd(
@@ -1111,6 +1112,7 @@ object Mappings
 
       dtos.CNV(
         dtos.Variant.Id(cnv.id),
+        None,
         dtos.Chromosome(cnv.component.chromosome.valueString),
         dtos.Variant.StartEnd(
           cnv.component.startRange.valueRange.low.value.toLong,
@@ -1670,12 +1672,6 @@ object Mappings
         molTh.recordedOn,
         subject,
         Reference.contained(medication),
-/*        
-        molTh.period.map {
-          case op: dtos.OpenEndPeriod[LocalDate] => op.mapTo[OpenEndPeriod[LocalDate]]
-          case cl: dtos.ClosedPeriod[LocalDate]  => cl.mapTo[ClosedPeriod[LocalDate]]
-        },
-*/        
         molTh.period.map(_.mapTo[Period[LocalDate]]),
         molTh.dosage.map(_.mapTo[DosageDensity]).map(List(_)),
         Option(
@@ -1709,91 +1705,6 @@ object Mappings
 
   }
 
-/*
-  implicit val molecularTherapyToFHIR: dtos.MolecularTherapy => MolecularTherapy = {
-
-    import MolecularTherapy.Systems._
-
-    molTh =>
-
-      val identifier = NonEmptyList.one(molTh.id.mapTo[Identifier])
-      val subject    = LogicalReference[MTBPatient](molTh.patient)
-      val basedOn    = NonEmptyList.one(LogicalReference[TherapyRecommendation](molTh.basedOn))
-      val note       = molTh.note.map(Note(_)).map(List(_))
-
-      molTh match {
-
-        case th: dtos.NotDoneTherapy => {
-          NotTakenMolecularTherapy(
-            identifier,
-            basedOn,
-            molTh.recordedOn,
-            subject,
-            Reference[MTBMedication]("DUMMY"),
-            NonEmptyList.one(
-              CodeableConceptStatic(CodingStatic(th.notDoneReason.code.toString,None,None))
-            ),
-            note
-          )
-        }
-
-        case th: dtos.StoppedTherapy => {
-
-          val medication = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
-
-          StoppedMolecularTherapy(
-            identifier,
-            ContainedMedication(medication),
-            basedOn,
-            molTh.recordedOn,
-            subject,
-            Reference.contained(medication),
-            ClosedPeriod(th.period.start,th.period.end),
-            th.dosage.map(_.mapTo[DosageDensity]).map(List(_)),
-            NonEmptyList.one(
-              CodeableConceptStatic(CodingStatic(th.reasonStopped.code.toString,None,None))
-            ),
-            note
-          )
-        }
-
-        case th: dtos.CompletedTherapy => {
-
-          val medication = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
-
-          CompletedMolecularTherapy(
-            identifier,
-            ContainedMedication(medication),
-            basedOn,
-            molTh.recordedOn,
-            subject,
-            Reference.contained(medication),
-            ClosedPeriod(th.period.start,th.period.end),
-            th.dosage.map(_.mapTo[DosageDensity]).map(List(_)),
-            note
-          )
-        }
-
-        case th: dtos.OngoingTherapy => {
-
-          val medication = th.medication.getOrElse(List.empty).mapTo[MTBMedication]
-
-          ActiveMolecularTherapy(
-            identifier,
-            ContainedMedication(medication),
-            basedOn,
-            molTh.recordedOn,
-            subject,
-            Reference.contained(medication),
-            OpenEndPeriod(th.period.start),
-            th.dosage.map(_.mapTo[DosageDensity]).map(List(_)),
-            note
-          )
-        }
-
-      }
-  }
-*/
 
   implicit val molTherapyDocToFHIR:
     dtos.MolecularTherapyDocumentation => MolecularTherapyHistory = {
@@ -1823,13 +1734,8 @@ object Mappings
         molTh.dateAsserted,
         molTh.status.mapTo[dtos.MolecularTherapy.Status.Value],
         molTh.basedOn.head.identifier,
+    None,
         molTh.period.map(_.mapTo[dtos.Period[LocalDate]]),
-/*        
-        molTh.period.map {
-          case op: OpenEndPeriod[LocalDate] => op.mapTo[dtos.OpenEndPeriod[LocalDate]]
-          case cl: ClosedPeriod[LocalDate]  => cl.mapTo[dtos.ClosedPeriod[LocalDate]]
-        },
-*/
         Some(molTh.contained.medication.mapTo[List[dtos.Medication.Coding]]),
         molTh.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
         molTh.statusReason
@@ -1859,72 +1765,6 @@ object Mappings
       
   }
 
-/*
-  implicit val molecularTherapyFromFHIR: MolecularTherapy => dtos.MolecularTherapy = {
-
-    import dtos.MolecularTherapy._
-
-    molTh =>
-
-      val id      = dtos.TherapyId(molTh.identifier.head.value)
-      val note    = molTh.note.flatMap(_.headOption).map(_.text)
-
-      molTh match {
-
-        case th: NotTakenMolecularTherapy => {
-          dtos.NotDoneTherapy(
-            id,
-            th.subject.identifier, 
-            th.dateAsserted,
-            th.basedOn.head.identifier,
-            dtos.Coding(NotDoneReason.withName(th.statusReason.head.coding.head.code),None),
-            note
-          )
-        }
-
-        case th: StoppedMolecularTherapy => {
-          dtos.StoppedTherapy(
-            id,
-            th.subject.identifier, 
-            molTh.dateAsserted,
-            th.basedOn.head.identifier,
-            dtos.ClosedPeriod(th.effectivePeriod.start,th.effectivePeriod.end),
-            Some(th.contained.medication.mapTo[List[dtos.Medication.Coding]]),
-            th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
-            dtos.Coding(StopReason.withName(th.statusReason.head.coding.head.code),None),
-            note
-          )
-        }
-
-        case th: CompletedMolecularTherapy => {
-          dtos.CompletedTherapy(
-            id,
-            th.subject.identifier, 
-            molTh.dateAsserted,
-            th.basedOn.head.identifier,
-            dtos.ClosedPeriod(th.effectivePeriod.start,th.effectivePeriod.end),
-            Some(th.contained.medication.mapTo[List[dtos.Medication.Coding]]),
-            th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
-            note
-          )
-        }
-
-        case th: ActiveMolecularTherapy => {
-          dtos.OngoingTherapy(
-            id,
-            th.subject.identifier, 
-            molTh.dateAsserted,
-            th.basedOn.head.identifier,
-            dtos.OpenEndPeriod(th.effectivePeriod.start),
-            Some(th.contained.medication.mapTo[List[dtos.Medication.Coding]]),
-            th.dosage.flatMap(_.headOption).map(_.mapTo[dtos.Dosage.Value]),
-            note
-          )
-        }
-
-      }
-  }
-*/
 
   implicit val molTherapyDocFromFHIR:
     MolecularTherapyHistory => dtos.MolecularTherapyDocumentation = {

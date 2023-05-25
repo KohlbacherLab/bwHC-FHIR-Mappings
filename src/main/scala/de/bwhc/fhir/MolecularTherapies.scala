@@ -13,7 +13,7 @@ import org.hl7.fhir.r4.json.contained._
 
 import play.api.libs.json._
 
-import de.bwhc.mtb.data.entry.dtos.MolecularTherapy.{
+import de.bwhc.mtb.dtos.MolecularTherapy.{
   StopReason,
   NotDoneReason
 }

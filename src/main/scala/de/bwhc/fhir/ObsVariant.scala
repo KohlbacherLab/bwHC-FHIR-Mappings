@@ -10,7 +10,7 @@ import org.hl7.fhir.r4.Observation._
 
 import play.api.libs.json.Json
 
-import de.bwhc.mtb.data.entry.dtos.CNV 
+import de.bwhc.mtb.dtos.CNV 
 
 
 abstract class ObsVariant extends ObservationSC

@@ -15,7 +15,7 @@ import org.hl7.fhir.r4.json._
 
 import play.api.libs.json.Json
 
-import de.bwhc.mtb.data.entry.dtos.GuidelineTherapy
+import de.bwhc.mtb.dtos.GuidelineTherapy
 
 
 final case class TherapyLine(value: PositiveInt) extends SimpleExtension[PositiveInt]

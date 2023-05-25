@@ -3,22 +3,16 @@ package de.bwhc.fhir
 
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers._
-
 import play.api.libs.json.Json
-
 import ca.uhn.fhir.context.FhirContext
 import ca.uhn.fhir.parser.StrictErrorHandler
 import ca.uhn.fhir.validation.{
   FhirValidator,
   ValidationResult
 }
-
-
 import de.ekut.tbi.generators.Gen
-
-import de.bwhc.mtb.data.entry.dtos
-import de.bwhc.mtb.data.gens._
-
+import de.bwhc.mtb.dtos
+import de.bwhc.mtb.dto.gens._
 import org.hl7.fhir.r4.LogicalReference
 import org.hl7.fhir.r4.FHIRJson._
 import Mappings._

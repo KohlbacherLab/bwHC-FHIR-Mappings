@@ -14,8 +14,8 @@ import org.hl7.fhir.r4.json._
 
 import play.api.libs.json.Json
 
-import de.bwhc.mtb.data.entry.dtos.TumorCellContent
-import de.bwhc.mtb.data.entry.dtos.SomaticNGSReport.SequencingType
+import de.bwhc.mtb.dtos.TumorCellContent
+import de.bwhc.mtb.dtos.SomaticNGSReport.SequencingType
 
 
 //-----------------------------------------------------------------------------

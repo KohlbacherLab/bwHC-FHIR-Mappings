@@ -4,8 +4,8 @@ package de.bwhc.fhir
 
 import org.hl7.fhir.r4.CodingSystem
 
-import de.bwhc.mtb.data.entry.dtos._
-import de.bwhc.mtb.data.entry.dtos.{Medication => ATC}
+import de.bwhc.mtb.dtos._
+import de.bwhc.mtb.dtos.{Medication => ATC}
 
 
 

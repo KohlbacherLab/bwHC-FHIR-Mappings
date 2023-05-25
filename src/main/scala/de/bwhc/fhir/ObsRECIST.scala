@@ -12,7 +12,7 @@ import org.hl7.fhir.r4.json._
 
 import play.api.libs.json.Json
 
-import de.bwhc.mtb.data.entry.dtos.RECIST
+import de.bwhc.mtb.dtos.RECIST
 
 
 sealed trait ObsRECISTProfile

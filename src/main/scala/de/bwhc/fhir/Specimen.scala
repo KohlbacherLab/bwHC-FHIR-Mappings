@@ -13,7 +13,7 @@ import org.hl7.fhir.r4.json._
 
 import play.api.libs.json.Json
 
-import de.bwhc.mtb.data.entry.dtos
+import de.bwhc.mtb.dtos
 
 
 import CodingSystems._
