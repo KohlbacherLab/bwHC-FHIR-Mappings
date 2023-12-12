@@ -4,7 +4,7 @@
 name := "fhir-mappings"
 ThisBuild / organization := "de.bwhc"
 ThisBuild / scalaVersion := "2.13.8"
-ThisBuild / version      := "1.0-SNAPSHOT"
+ThisBuild / version      := "1.0"
 
 
 //-----------------------------------------------------------------------------
@@ -16,8 +16,8 @@ lazy val root = project.in(file("."))
   .settings(
     libraryDependencies ++= Seq(
       "de.ekut.tbi"       %% "fhir-proof"                        % "0.1-SNAPSHOT",
-      "de.bwhc"           %% "mtb-dtos"                          % "1.0-SNAPSHOT",
-      "de.bwhc"           %% "mtb-dto-generators"                % "1.0-SNAPSHOT" % Test,
+      "de.bwhc"           %% "mtb-dtos"                          % "1.0",
+      "de.bwhc"           %% "mtb-dto-generators"                % "1.0" % Test,
       "ca.uhn.hapi.fhir"  %  "hapi-fhir-base"                    % "5.2.1" % Test,
       "ca.uhn.hapi.fhir"  %  "hapi-fhir-structures-r4"           % "5.2.1" % Test,
       "ca.uhn.hapi.fhir"  %  "hapi-fhir-validation-resources-r4" % "5.2.1" % Test,
